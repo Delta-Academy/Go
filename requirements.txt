@@ -3,3 +3,5 @@ pygame
 tqdm
 delta-utils
 gym
+pettingzoo
+torch

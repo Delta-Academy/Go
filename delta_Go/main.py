@@ -1,13 +1,15 @@
 from typing import Any, Dict
 
 from check_submission import check_submission
-from game_mechanics import Env, choose_move_randomly, load_pkl, play_game, save_pkl
+from game_mechanics import GoEnv, choose_move_randomly, load_pkl, play_game, save_pkl
+
+from torch import nn
 
 TEAM_NAME = "Team Name"  # <---- Enter your team name here!
 assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 
 
-def train() -> Dict:
+def train() -> nn.Module:
     """
     TODO: Write this function to train your algorithm.
 
@@ -38,20 +40,20 @@ if __name__ == "__main__":
         TEAM_NAME
     )  # <---- Make sure I pass! Or your solution will not work in the tournament!!
 
-    my_value_fn = load_pkl(TEAM_NAME)
+    my_network = load_pkl(TEAM_NAME)
 
     # Code below plays a single game against a random
     #  opponent, think about how you might want to adapt this to
     #  test the performance of your algorithm.
-    def choose_move_no_value_fn(state: Any) -> int:
+    def choose_move_no_network(state: Any) -> int:
         """The arguments in play_game() require functions that only take the state as input.
 
         This converts choose_move() to that format.
         """
-        return choose_move(state, my_value_fn)
+        return choose_move(state, my_network)
 
     play_game(
-        your_choose_move=choose_move_no_value_fn,
+        your_choose_move=choose_move_no_network,
         opponent_choose_move=choose_move_randomly,
         game_speed_multiplier=1,
         render=True,
