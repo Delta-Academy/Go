@@ -1,0 +1,5 @@
+numpy
+pygame
+tqdm
+delta-utils
+gym
