@@ -1,11 +1,11 @@
 import time
 from typing import Any, Dict
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from check_submission import check_submission
-from game_mechanics import GoEnv, choose_move_randomly, play_go, choose_move_pass
+from game_mechanics import GoEnv, choose_move_pass, choose_move_randomly, play_go
 
 TEAM_NAME = "Team Jimmy"  # <---- Enter your team name here!
 assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
@@ -125,7 +125,7 @@ def n_games():
         play_go(
             your_choose_move=choose_move_randomly,
             opponent_choose_move=choose_move_randomly,
-            game_speed_multiplier=0.1,
+            game_speed_multiplier=100,
             render=True,
             verbose=True,
         )
