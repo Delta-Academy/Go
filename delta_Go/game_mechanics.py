@@ -10,7 +10,7 @@ from gym.spaces import Box, Discrete
 from pettingzoo.classic import go_v5
 from pettingzoo.utils import BaseWrapper
 
-BOARD_SIZE = 11
+BOARD_SIZE = 9
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
 
 # The komi to use is much debated. 7.5 seems to
@@ -38,7 +38,6 @@ def play_go(
     )
 
     observation, reward, done, info = env.reset()
-    # observation = env.reset()
     done = False
     while not done:
         action = your_choose_move(observation, info["legal_moves"])
@@ -67,8 +66,6 @@ class DeltaEnv(BaseWrapper):
         self.action_space = Discrete(BOARD_SIZE**2 + 1)
         self.observation_space = Box(low=-1, high=1, shape=(BOARD_SIZE, BOARD_SIZE))
         self.num_envs = 1
-        # Don't put on repli
-        self.reset_only_observation = False
 
     @property
     def turn(self) -> str:
@@ -80,7 +77,6 @@ class DeltaEnv(BaseWrapper):
 
     @property
     def observation(self):
-        # For some reason the depth of the third dimesion is 17? Keep an eye
         obs = self.env.last()[0]["observation"]
         player = obs[:, :, 0].astype("int")
         opponent = obs[:, :, 1].astype("int")
@@ -122,8 +118,6 @@ class DeltaEnv(BaseWrapper):
                 ),
             )
 
-        if self.reset_only_observation:
-            return self.observation
         return self.observation, 0, self.done, self.info
 
     def move_to_string(self, move: int):
@@ -168,31 +162,20 @@ class DeltaEnv(BaseWrapper):
             # Flipped as above
             reward = opponent_reward
 
-        if self.done:
-            if self.verbose:
-                white_idx = int(self.turn_pretty == "white")
-                black_idx = int(self.turn_pretty == "black")
-
-                black_score = self.env.env.env.env.go_game.score()  # lol
-                result_string = self.env.env.env.env.go_game.result_string()
-
-                player_score = black_score if self.player == "black_0" else black_score * -1
-
-                white_count = np.sum(
-                    self.env.last()[0]["observation"].astype("int")[:, :, white_idx]
-                )
-                black_count = np.sum(
-                    self.env.last()[0]["observation"].astype("int")[:, :, black_idx]
-                )
-                # Don't print all this
-                print(
-                    f"Game over. Reward = {reward}. White has {white_count} counters. "
-                    f"Player was playing as {self.player}. "
-                    f"Black has {black_count} counters. "
-                    f"Your score was {player_score}. "
-                    f"Black score was {black_score}. "
-                    f"Result string was {result_string}"
-                )
+        if self.done and self.verbose:
+            white_idx = int(self.turn_pretty == "white")
+            black_idx = int(self.turn_pretty == "black")
+            black_score = self.env.env.env.env.go_game.score()  # lol
+            player_score = black_score if self.player == "black_0" else black_score * -1
+            white_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, white_idx])
+            black_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, black_idx])
+            print(
+                f"\nGame over. Reward = {reward}.\n"
+                f"Player was playing as {self.player[:-2]}.\n"
+                f"White has {white_count} counters.\n"
+                f"Black has {black_count} counters.\n"
+                f"Your score is {player_score}.\n"
+            )
 
         return self.observation, reward, self.done, self.info
 
@@ -213,14 +196,7 @@ def GoEnv(
 
 
 def choose_move_randomly(observation, legal_moves):
-    # Only pass if you can't do anything else
-    if len(legal_moves) > 1:
-        return np.random.choice(legal_moves[:-1])
-    else:
-        # remove sanity checks
-        assert len(legal_moves) == 1
-        assert legal_moves[0] == BOARD_SIZE**2
-        return legal_moves[0]
+    return random.choice(legal_moves)
 
 
 def choose_move_pass(observation, legal_moves) -> int:

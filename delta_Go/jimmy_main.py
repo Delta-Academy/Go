@@ -138,11 +138,11 @@ def n_games(player, opponent):
             render=False,
             verbose=False,
         )
-        rewards.append(reward)
-        if reward == 1:
-            print("win")
-        else:
-            print("loss")
+        # rewards.append(reward)
+        # if reward == 1:
+        #     print("win")
+        # else:
+        #     print("loss")
     print(np.mean(rewards))
 
 
@@ -189,15 +189,16 @@ if __name__ == "__main__":
 
     # opponent = ChooseMoveCheckpoint("checkpoint20").choose_move
     player = ChooseMoveCheckpoint("checkpoint21").choose_move
+    player = choose_move_randomly
     opponent = choose_move_randomly
 
     play_go(
         your_choose_move=player,
         opponent_choose_move=opponent,
         game_speed_multiplier=10,
-        render=True,
+        render=False,
         verbose=True,
     )
 
-    train()
-    # n_games(player=player, opponent=opponent)
+    # train()
+    n_games(player=player, opponent=opponent)
