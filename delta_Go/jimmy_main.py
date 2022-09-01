@@ -1,15 +1,27 @@
+import copy
 import time
+from pathlib import Path
 from typing import Any, Dict
 
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import pyplot as plt
+from torch import nn
 from tqdm import tqdm
 
 from check_submission import check_submission
-from game_mechanics import GoEnv, choose_move_pass, choose_move_randomly, play_go
+from game_mechanics import BOARD_SIZE, GoEnv, choose_move_pass, choose_move_randomly, play_go
+from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
+from sb3_contrib.common.wrappers import ActionMasker
+from sb3_contrib.ppo_mask import MaskablePPO
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.utils import safe_mean
 
 TEAM_NAME = "Team Jimmy"  # <---- Enter your team name here!
 assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 
+
+HERE = Path(__file__).parent.resolve()
 
 # class ChooseMoveCheckpoint:
 #     def __init__(self, checkpoint_name: str):
@@ -22,14 +34,14 @@ assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 #         return action
 
 
-# class CustomCallback(BaseCallback):
-#     def __init__(self, verbose=0):
-#         super(CustomCallback, self).__init__(verbose)
-#         self.rewards = []
+class CustomCallback(BaseCallback):
+    def __init__(self, verbose=0):
+        super(CustomCallback, self).__init__(verbose)
+        self.rewards = []
 
-#     def _on_step(self) -> None:
-#         """Called every step()"""
-#         self.rewards.append(safe_mean([ep_info["r"] for ep_info in self.model.ep_info_buffer]))
+    def _on_step(self) -> None:
+        """Called every step()"""
+        self.rewards.append(safe_mean([ep_info["r"] for ep_info in self.model.ep_info_buffer]))
 
 
 # def mask_fn(env):
@@ -45,31 +57,46 @@ assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 #     return trace
 
 
-# def train() -> Dict:
+def mask_fn(env):
+    mask = np.repeat(False, BOARD_SIZE**2 + 1)
+    mask[env.legal_moves] = True
+    return mask
 
-#     #############
-#     # Play against hard-coded opponent
 
-#     # env = PokerEnv(choose_move_rules, verbose=True, render=False)
-#     # env = ActionMasker(env, mask_fn)
-#     # env.reset()
+def smooth_trace(trace: np.ndarray, one_sided_window_size: int = 3) -> np.ndarray:
+    """Smooths a trace by averaging over a window of size one_sided_window_size."""
+    window_size = int(2 * one_sided_window_size + 1)
+    trace[one_sided_window_size:-one_sided_window_size] = (
+        np.convolve(trace, np.ones(window_size), mode="valid") / window_size
+    )
+    return trace
 
-#     # model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=2, ent_coef=0.01)
 
-#     # env.reset()
+def train() -> Dict:
 
-#     # # model = PPO.load("checkpoint1")
-#     # # model.set_env(env)
+    ############
+    # Play against hard-coded opponent
 
-#     # callback = CustomCallback()
-#     # model.learn(total_timesteps=250_000, callback=callback)
-#     # model.save("checkpoint1")
-#     # print("reached checkpoint1 \n\n\n\n\n")
-#     # plt.plot(smooth_trace(callback.rewards, 100))
-#     # plt.draw()
-#     # time.sleep(20)
-#     # plt.clf()
+    env = GoEnv(choose_move_randomly, verbose=False, render=False)
+    env = ActionMasker(env, mask_fn)
+    env.reset()
 
+    # model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=2, ent_coef=0.01)
+    model = MaskablePPO.load(HERE / "checkpoint1")
+    model.set_env(env)
+
+    callback = CustomCallback()
+    model.learn(total_timesteps=250_000, callback=callback)
+    model.save(HERE / "checkpoint1")
+    print("reached checkpoint1 \n\n\n\n\n")
+    plt.plot(smooth_trace(callback.rewards, 100))
+    plt.draw()
+    plt.axhline(0)
+    plt.show()
+    return model
+
+
+#
 #     # test_model(model)
 
 #     ################
@@ -98,38 +125,42 @@ assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 #     return model
 
 
-# def train() -> Dict:
-#     """
-#     TODO: Write this function to train your algorithm.
+def n_games(choose_move):
 
-#     Returns:
-#     """
-#     raise NotImplementedError("You need to implement this function!")
-
-
-# def choose_move(state: Any, user_file: Any, verbose: bool = False) -> int:
-#     """Called during competitive play. It acts greedily given current state of the board and value
-#     function dictionary. It returns a single move to play.
-
-#     Args:
-#         state:
-
-#     Returns:
-#     """
-#     raise NotImplementedError("You need to implement this function!")
-
-
-def n_games():
-
+    rewards = []
     for _ in tqdm(range(100)):
-        play_go(
-            your_choose_move=choose_move_randomly,
+        reward = play_go(
+            your_choose_move=choose_move,
             opponent_choose_move=choose_move_randomly,
             game_speed_multiplier=100,
-            render=True,
-            verbose=True,
+            render=False,
+            verbose=False,
         )
-        time.sleep(1000)
+        rewards.append(reward)
+        if reward == 1:
+            print("win")
+        else:
+            print("loss")
+    print(np.mean(rewards))
+
+
+def choose_move(state: np.ndarray, legal_moves: np.ndarray, neural_network: nn.Module) -> int:
+    """Called during competitive play. It acts greedily given current state of the board and your
+    network. It returns a single move to play.
+
+    Args:
+         state: The state of poker game. shape = (72,)
+         legal_moves: Legal actions on this turn. Subset of {0, 1, 2, 3}
+         neural_network: Your pytorch network from train()
+
+    Returns:
+        action: Single value drawn from legal_moves
+    """
+
+    neural_network = MaskablePPO.load(HERE / "checkpoint1")
+    mask = np.isin(np.arange(BOARD_SIZE**2 + 1), legal_moves)
+    action, _ = neural_network.predict(state, deterministic=False, action_masks=mask)
+    return action
 
 
 if __name__ == "__main__":
@@ -144,21 +175,23 @@ if __name__ == "__main__":
 
     # my_network = load_pkl(TEAM_NAME)
 
-    n_games()
     # # Code below plays a single game against a random
     # #  opponent, think about how you might want to adapt this to
     # #  test the performance of your algorithm.
-    # def choose_move_no_network(state: Any) -> int:
-    #     """The arguments in play_game() require functions that only take the state as input.
+    def choose_move_no_network(state: Any, legal_moves) -> int:
+        """The arguments in play_game() require functions that only take the state as input.
 
-    #     This converts choose_move() to that format.
-    #     """
-    #     return choose_move(state, my_network)
+        This converts choose_move() to that format.
+        """
+        return choose_move(state, legal_moves, None)
 
-    # play_go(
-    #     your_choose_move=choose_move_randomly,
-    #     opponent_choose_move=choose_move_randomly,
-    #     game_speed_multiplier=1,
-    #     render=True,
-    #     verbose=False,
-    # )
+    play_go(
+        your_choose_move=choose_move_no_network,
+        opponent_choose_move=choose_move_randomly,
+        game_speed_multiplier=10,
+        render=True,
+        verbose=True,
+    )
+
+    # train()
+    # n_games(choose_move_no_network)

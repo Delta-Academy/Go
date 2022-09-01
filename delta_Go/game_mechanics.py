@@ -1,31 +1,33 @@
-from typing import Callable
-
 import random
 import time
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict
 
 import numpy as np
 from gym.spaces import Box, Discrete
 
+from pettingzoo.classic import go_v5
 from pettingzoo.utils import BaseWrapper
 
-import numpy as np
-
-from pettingzoo.classic import go_v5
-
-BOARD_SIZE = 7
-
+BOARD_SIZE = 11
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
+
+# The komi to use is much debated. 7.5 seems to
+# generalise well for different board sizes
+# lifein19x19.com/viewtopic.php?f=15&t=17750
+# 7.5 is also the komi used in alpha-go vs Lee Sedol
+# (non-integer means there are no draws)
+
+KOMI = 7.5
 
 
 def GoEnv(
     opponent_choose_move: Callable[[np.ndarray, np.ndarray], int],
     verbose: bool = False,
     render: bool = False,
-    game_speed_multiplier: int = 0,
+    game_speed_multiplier: int = 1,
 ):
     return DeltaEnv(
-        go_v5.env(board_size=BOARD_SIZE, komi=0),
+        go_v5.env(board_size=BOARD_SIZE, komi=KOMI),
         opponent_choose_move,
         verbose,
         render,
@@ -34,11 +36,18 @@ def GoEnv(
 
 
 def choose_move_randomly(observation, legal_moves):
-    return np.random.choice(legal_moves)
+    # Only pass if you can't do anything else
+    if len(legal_moves) > 1:
+        return np.random.choice(legal_moves[:-1])
+    else:
+        # remove sanity checks
+        assert len(legal_moves) == 1
+        assert legal_moves[0] == BOARD_SIZE**2
+        return legal_moves[0]
 
 
 def choose_move_pass(observation, legal_moves) -> int:
-    "passes on every turn"
+    """passes on every turn."""
     return BOARD_SIZE**2
 
 
@@ -58,9 +67,14 @@ def play_go(
     )
 
     observation, reward, done, info = env.reset()
+    # observation = env.reset()
+    done = False
     while not done:
         action = your_choose_move(observation, info["legal_moves"])
         observation, reward, done, info = env.step(action)
+    if render:
+        time.sleep(100)
+    return reward
 
 
 class DeltaEnv(BaseWrapper):
@@ -79,6 +93,9 @@ class DeltaEnv(BaseWrapper):
         self.render = render
         self.verbose = verbose
         self.game_speed_multiplier = game_speed_multiplier
+        self.action_space = Discrete(BOARD_SIZE**2 + 1)
+        self.observation_space = Box(low=-1, high=1, shape=(BOARD_SIZE, BOARD_SIZE))
+        self.num_envs = 1
 
     @property
     def turn(self) -> str:
@@ -133,6 +150,7 @@ class DeltaEnv(BaseWrapper):
             )
 
         return self.observation, 0, self.done, self.info
+        # return self.observation
 
     def move_to_string(self, move: int):
         N = self.observation.shape[0]
@@ -152,7 +170,6 @@ class DeltaEnv(BaseWrapper):
             print(f"{self.turn_pretty} {self.move_to_string(move)}")
 
         self.env.step(move)
-        print(self)
 
         if self.render:
             self.render_game()
@@ -165,6 +182,7 @@ class DeltaEnv(BaseWrapper):
 
     def step(self, move: int):
 
+        # Flipped because the env takes the step, changes the player, then we return the reward
         reward = -self._step(move)
 
         if not self.done:
@@ -173,6 +191,7 @@ class DeltaEnv(BaseWrapper):
                     observation=self.observation, legal_moves=self.legal_moves
                 ),
             )
+            # Flipped as above
             reward = opponent_reward
 
         if self.done:
@@ -191,6 +210,7 @@ class DeltaEnv(BaseWrapper):
                 black_count = np.sum(
                     self.env.last()[0]["observation"].astype("int")[:, :, black_idx]
                 )
+                # Don't print all this
                 print(
                     f"Game over. Reward = {reward}. White has {white_count} counters. "
                     f"Player was playing as {self.player}. "
@@ -199,6 +219,5 @@ class DeltaEnv(BaseWrapper):
                     f"Black score was {black_score}. "
                     f"Result string was {result_string}"
                 )
-                time.sleep(1000)
 
         return self.observation, reward, self.done, self.info

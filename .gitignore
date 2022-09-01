@@ -15,6 +15,7 @@ team_store/
 *.pkl
 !*winner.pkl
 *-env*
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
