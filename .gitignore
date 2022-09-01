@@ -14,7 +14,7 @@ rankings/
 team_store/
 *.pkl
 !*winner.pkl
-*env*
+*-env*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
