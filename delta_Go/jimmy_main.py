@@ -23,15 +23,16 @@ assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 
 HERE = Path(__file__).parent.resolve()
 
-# class ChooseMoveCheckpoint:
-#     def __init__(self, checkpoint_name: str):
-#         self.neural_network = copy.deepcopy(load_checkpoint(checkpoint_name))
 
-#     def choose_move(self, state, legal_moves):
-#         neural_network = self.neural_network
-#         mask = np.isin(np.arange(4), legal_moves)
-#         action, _ = neural_network.predict(state, deterministic=False, action_masks=mask)
-#         return action
+class ChooseMoveCheckpoint:
+    def __init__(self, checkpoint_name: str):
+        self.neural_network = copy.deepcopy(MaskablePPO.load(HERE / checkpoint_name))
+
+    def choose_move(self, observation, legal_moves):
+        neural_network = self.neural_network
+        mask = np.isin(np.arange(BOARD_SIZE**2 + 1), legal_moves)
+        action, _ = neural_network.predict(observation, deterministic=False, action_masks=mask)
+        return action
 
 
 class CustomCallback(BaseCallback):
@@ -74,21 +75,22 @@ def smooth_trace(trace: np.ndarray, one_sided_window_size: int = 3) -> np.ndarra
 
 def train() -> Dict:
 
-    ############
-    # Play against hard-coded opponent
+    for idx in range(16, 22):
+        checkpoint = ChooseMoveCheckpoint(f"checkpoint{idx}")
+        env = GoEnv(checkpoint.choose_move, verbose=False, render=False)
+        env.reset_only_observation = True
+        env = ActionMasker(env, mask_fn)
+        env.reset()
 
-    env = GoEnv(choose_move_randomly, verbose=False, render=False)
-    env = ActionMasker(env, mask_fn)
-    env.reset()
+        # model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=2, ent_coef=0.01)
+        model = MaskablePPO.load(HERE / f"checkpoint{idx}")
+        model.set_env(env)
 
-    # model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=2, ent_coef=0.01)
-    model = MaskablePPO.load(HERE / "checkpoint1")
-    model.set_env(env)
+        callback = CustomCallback()
+        model.learn(total_timesteps=150_000, callback=callback)
 
-    callback = CustomCallback()
-    model.learn(total_timesteps=250_000, callback=callback)
-    model.save(HERE / "checkpoint1")
-    print("reached checkpoint1 \n\n\n\n\n")
+        model.save(HERE / f"checkpoint{idx+1}")
+
     plt.plot(smooth_trace(callback.rewards, 100))
     plt.draw()
     plt.axhline(0)
@@ -125,13 +127,13 @@ def train() -> Dict:
 #     return model
 
 
-def n_games(choose_move):
+def n_games(player, opponent):
 
     rewards = []
     for _ in tqdm(range(100)):
         reward = play_go(
-            your_choose_move=choose_move,
-            opponent_choose_move=choose_move_randomly,
+            your_choose_move=player,
+            opponent_choose_move=opponent,
             game_speed_multiplier=100,
             render=False,
             verbose=False,
@@ -157,7 +159,7 @@ def choose_move(state: np.ndarray, legal_moves: np.ndarray, neural_network: nn.M
         action: Single value drawn from legal_moves
     """
 
-    neural_network = MaskablePPO.load(HERE / "checkpoint1")
+    neural_network = MaskablePPO.load(HERE / "checkpoint3")
     mask = np.isin(np.arange(BOARD_SIZE**2 + 1), legal_moves)
     action, _ = neural_network.predict(state, deterministic=False, action_masks=mask)
     return action
@@ -185,13 +187,17 @@ if __name__ == "__main__":
         """
         return choose_move(state, legal_moves, None)
 
+    # opponent = ChooseMoveCheckpoint("checkpoint20").choose_move
+    player = ChooseMoveCheckpoint("checkpoint21").choose_move
+    opponent = choose_move_randomly
+
     play_go(
-        your_choose_move=choose_move_no_network,
-        opponent_choose_move=choose_move_randomly,
+        your_choose_move=player,
+        opponent_choose_move=opponent,
         game_speed_multiplier=10,
         render=True,
         verbose=True,
     )
 
-    # train()
-    # n_games(choose_move_no_network)
+    train()
+    # n_games(player=player, opponent=opponent)

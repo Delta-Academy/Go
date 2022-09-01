@@ -1,5 +1,7 @@
 import random
 import time
+from copy import copy, deepcopy
+from dataclasses import dataclass
 from typing import Callable, Dict
 
 import numpy as np
@@ -18,37 +20,6 @@ ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
 # (non-integer means there are no draws)
 
 KOMI = 7.5
-
-
-def GoEnv(
-    opponent_choose_move: Callable[[np.ndarray, np.ndarray], int],
-    verbose: bool = False,
-    render: bool = False,
-    game_speed_multiplier: int = 1,
-):
-    return DeltaEnv(
-        go_v5.env(board_size=BOARD_SIZE, komi=KOMI),
-        opponent_choose_move,
-        verbose,
-        render,
-        game_speed_multiplier=game_speed_multiplier,
-    )
-
-
-def choose_move_randomly(observation, legal_moves):
-    # Only pass if you can't do anything else
-    if len(legal_moves) > 1:
-        return np.random.choice(legal_moves[:-1])
-    else:
-        # remove sanity checks
-        assert len(legal_moves) == 1
-        assert legal_moves[0] == BOARD_SIZE**2
-        return legal_moves[0]
-
-
-def choose_move_pass(observation, legal_moves) -> int:
-    """passes on every turn."""
-    return BOARD_SIZE**2
 
 
 def play_go(
@@ -96,6 +67,8 @@ class DeltaEnv(BaseWrapper):
         self.action_space = Discrete(BOARD_SIZE**2 + 1)
         self.observation_space = Box(low=-1, high=1, shape=(BOARD_SIZE, BOARD_SIZE))
         self.num_envs = 1
+        # Don't put on repli
+        self.reset_only_observation = False
 
     @property
     def turn(self) -> str:
@@ -149,8 +122,9 @@ class DeltaEnv(BaseWrapper):
                 ),
             )
 
+        if self.reset_only_observation:
+            return self.observation
         return self.observation, 0, self.done, self.info
-        # return self.observation
 
     def move_to_string(self, move: int):
         N = self.observation.shape[0]
@@ -221,3 +195,44 @@ class DeltaEnv(BaseWrapper):
                 )
 
         return self.observation, reward, self.done, self.info
+
+
+def GoEnv(
+    opponent_choose_move: Callable[[np.ndarray, np.ndarray], int],
+    verbose: bool = False,
+    render: bool = False,
+    game_speed_multiplier: int = 1,
+) -> DeltaEnv:
+    return DeltaEnv(
+        go_v5.env(board_size=BOARD_SIZE, komi=KOMI),
+        opponent_choose_move,
+        verbose,
+        render,
+        game_speed_multiplier=game_speed_multiplier,
+    )
+
+
+def choose_move_randomly(observation, legal_moves):
+    # Only pass if you can't do anything else
+    if len(legal_moves) > 1:
+        return np.random.choice(legal_moves[:-1])
+    else:
+        # remove sanity checks
+        assert len(legal_moves) == 1
+        assert legal_moves[0] == BOARD_SIZE**2
+        return legal_moves[0]
+
+
+def choose_move_pass(observation, legal_moves) -> int:
+    """passes on every turn."""
+    return BOARD_SIZE**2
+
+
+def transition_function(env: DeltaEnv, action: int) -> DeltaEnv:
+    env = deepcopy(env)
+    env._step(action)
+    return env
+
+
+def reward_function(env: DeltaEnv):
+    return env.reward
