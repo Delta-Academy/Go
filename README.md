@@ -90,6 +90,11 @@ This acts greedily given the state and network.
 
 In the competition, the choose_move() function is called to make your next move. Takes the state as input and outputs an action.
 
+The state defined by two variables.
+
+- `observation` a (board size x board size) numpy array as defined above.
+- `legal_moves` a numpy array of integers containing all the legal moves on that turn
+
 </details>
 
 ## Existing Code :pray:
@@ -111,20 +116,21 @@ The opponents' <code style="white-space:nowrap;">choose_move</code> functions ar
 </details>
 
 <details>
-<summary><code style="white-space:nowrap;"> choose_move_square()</code></summary>
-A basic tron bot that won't die immediately, a useful first opponent!
+<summary><code style="white-space:nowrap;"> choose_move_randomly()</code></summary>
+A basic go playing bot that makes legal random moves, learn to beat this first!
 <br />
 <br />
 Takes the state as input and outputs an action.
 </details>
 
 <details>
-<summary><code style="white-space:nowrap;">  play_tron()</code></summary>
-Plays a game of tron, which can be rendered through pygame (if <code style="white-space:nowrap;">render=True</code>).
-
+<summary><code style="white-space:nowrap;">  play_go()</code></summary>
+Plays a game of Go, which can be rendered through pygame (if <code style="white-space:nowrap;">render=True</code>).
+<!--
 You can play against your own bot if you set <code style="white-space:nowrap;">your_choose_move</code> to <code style="white-space:nowrap;">human_player</code>!
 <br />
-<br />
+<br /> -->
+
 Inputs:
 
 <code style="white-space:nowrap;">your_choose_move</code>: Function that takes the state and outputs the action for your agent.
@@ -141,7 +147,7 @@ Inputs:
 
 ## Suggested Approach :+1:
 
-1. Use monte carlo tree search to simlulate possible future trajectories>
+1. Use one or multiple of the approaches you've used in the course so far
 2. **Write `train()`**, borrowing from past exercises
 3. **Iterate, iterate, iterate** on that `train()` function
 4. **Print out important values** - otherwise bugs in your code may slip through the cracks :astonished:
