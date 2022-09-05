@@ -1,11 +1,11 @@
 # Week four: Go :white_circle: :black_circle: :white_circle: :black_circle:
 
-![Drive your light cycle to victory](images/go_game.webp)
+![](images/go_game.webp)
 
 ## Rules of Go
 
 Go is a two player board game. The aim is to capture territory from your opponent :guardsman:. The player that has the most territory at the end of the game is the winner.
-
+i
 The rules of Go are complex and many different rule-sets exist. [Wikipedia](<https://en.wikipedia.org/wiki/Go_(game)>) has a good description of the rules so we won't rehash them here.
 
 The rule-set we will use here are the [CGOS](http://www.yss-aya.com/cgos/) rules that allow two bots to play each other (as other forms of Go rely on agreements between human players).
@@ -14,7 +14,7 @@ Professional go is played on a 19x19 board, but we will use a 9x9 board so you d
 
 Do not fret if you do not understand the rules fully, we will provide your bots with a list of legal moves for each turn!
 
-### Starting and ending the game
+### Starting and ending the game
 
 Go starts with an empty board and black places the first stone. We will randomise which player is black on each game.
 
@@ -31,7 +31,8 @@ The score also includes a [Komi](<https://en.wikipedia.org/wiki/Go_(game)#Komi>)
 1. You must build an agent to play tron using either a **reinforcement learning** algorithm or a **heuristic search algorithm** (such as monte carlo tree search :deciduous_tree:)
 2. You can only write code in `main.py`
 
-   - You can only store data to be used in a competition in a `.pt` file by `save_network()` (it is not mandatory to use this however).
+   - You can only store data to be used in a competition in a `.pkl` file by `save_file()`.
+   - You can pkl anything you want, even a dictionary of pytorch networks! Just make sure your choose_move can read it.
    - In the competition, your agent will call the `choose_move()` function in `main.py` to select a move (`choose_move()` may call other functions in `main.py`)
    - Any code not in `main.py` will not be used.
 
@@ -79,10 +80,11 @@ The integer `81` is the pass action. Two consecutive passes ends the game. If yo
 
 <details>
 <summary><code style="white-space:nowrap;">  train()</code></summary>
+(Optional)
 Write this to train your algorithm from experience in the environment.
 <br />
 <br />
-(Optional) Return a trained network so it can be saved.
+(Optional) Returns a pickelable object for your choose_move to use
 </details>
 <details>
 <summary><code style="white-space:nowrap;">  choose_move()</code></summary>

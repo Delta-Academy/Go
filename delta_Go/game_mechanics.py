@@ -1,14 +1,25 @@
+import pickle
 import random
+import sys
 import time
 from copy import copy, deepcopy
 from dataclasses import dataclass
-from typing import Callable, Dict
+from pathlib import Path
+from typing import Any, Callable, Dict
 
 import numpy as np
+import torch
 from gym.spaces import Box, Discrete
+from torch import nn
 
 from pettingzoo.classic import go_v5
 from pettingzoo.utils import BaseWrapper
+
+HERE = Path(__file__).parent.resolve()
+
+# Hack as this won't pip install on replit
+sys.path.append(str(HERE / "PettingZoo"))
+
 
 BOARD_SIZE = 9
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
@@ -212,3 +223,28 @@ def transition_function(env: DeltaEnv, action: int) -> DeltaEnv:
 
 def reward_function(env: DeltaEnv):
     return env.reward
+
+
+def load_pkl(team_name: str, network_folder: Path = HERE) -> nn.Module:
+    net_path = network_folder / f"{team_name}_file.pkl"
+    assert (
+        net_path.exists()
+    ), f"Network saved using TEAM_NAME='{team_name}' doesn't exist! ({net_path})"
+    with open(net_path, "rb") as handle:
+        file = pickle.load(handle)
+    return file
+
+
+def save_pkl(file: Any, team_name: str) -> None:
+    assert "/" not in team_name, "Invalid TEAM_NAME. '/' are illegal in TEAM_NAME"
+    net_path = HERE / f"{team_name}_file.pkl"
+    n_retries = 5
+    for attempt in range(n_retries):
+        try:
+            with open(net_path, "wb") as handle:
+                pickle.dump(file, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            load_pkl(team_name)
+            return
+        except Exception:
+            if attempt == n_retries - 1:
+                raise
