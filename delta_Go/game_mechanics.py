@@ -5,11 +5,12 @@ import time
 from copy import copy, deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import torch
 from gym.spaces import Box, Discrete
+from pygame import Surface
 from torch import nn
 
 from pettingzoo.classic import go_v5
@@ -107,9 +108,9 @@ class DeltaEnv(BaseWrapper):
     def done(self) -> bool:
         return self.env.last()[2]
 
-    def render_game(self) -> None:
+    def render_game(self, screen: Optional[Surface] = None) -> None:
 
-        self.env.render()
+        self.env.render(screen_override=screen)
         time.sleep(1 / self.game_speed_multiplier)
 
     def reset(self):
@@ -174,18 +175,24 @@ class DeltaEnv(BaseWrapper):
             reward = opponent_reward
 
         if self.done and self.verbose:
-            white_idx = int(self.turn_pretty == "white")
-            black_idx = int(self.turn_pretty == "black")
-            black_score = self.env.env.env.env.go_game.score()  # lol
-            player_score = black_score if self.player == "black_0" else black_score * -1
-            white_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, white_idx])
-            black_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, black_idx])
+            self.white_idx = int(self.turn_pretty == "white")
+            self.black_idx = int(self.turn_pretty == "black")
+            self.black_score = self.env.env.env.env.go_game.score()  # lol
+            self.player_score = (
+                self.black_score if self.player == "black_0" else self.black_score * -1
+            )
+            self.white_count = np.sum(
+                self.env.last()[0]["observation"].astype("int")[:, :, self.white_idx]
+            )
+            self.black_count = np.sum(
+                self.env.last()[0]["observation"].astype("int")[:, :, self.black_idx]
+            )
             print(
                 f"\nGame over. Reward = {reward}.\n"
                 f"Player was playing as {self.player[:-2]}.\n"
-                f"White has {white_count} counters.\n"
-                f"Black has {black_count} counters.\n"
-                f"Your score is {player_score}.\n"
+                f"White has {self.white_count} counters.\n"
+                f"Black has {self.black_count} counters.\n"
+                f"Your score is {self.player_score}.\n"
             )
 
         return self.observation, reward, self.done, self.info

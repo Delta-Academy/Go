@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 from torch import nn
@@ -32,7 +32,6 @@ def choose_move(observation: np.ndarray, legal_moves: np.ndarray, pkl_file: Any)
         The action to take
     """
     return choose_move_randomly(observation, legal_moves)
-    raise NotImplementedError("You need to implement this function!")
 
 
 if __name__ == "__main__":
