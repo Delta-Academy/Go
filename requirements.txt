@@ -3,5 +3,5 @@ pygame
 tqdm
 delta-utils
 gym
-git+https://github.com/Delta-Academy/PettingZoo.git@update-go-visuals
+git+https://github.com/Delta-Academy/PettingZoo@master
 torch==1.8.0
