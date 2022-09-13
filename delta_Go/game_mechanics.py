@@ -80,6 +80,9 @@ class DeltaEnv(BaseWrapper):
         self.observation_space = Box(low=-1, high=1, shape=(BOARD_SIZE, BOARD_SIZE))
         self.num_envs = 1
 
+        # Which color do we play as
+        self.player = random.choice(["black_0", "white_0"])
+
     @property
     def turn(self) -> str:
         return self.env.agent_selection
@@ -115,10 +118,11 @@ class DeltaEnv(BaseWrapper):
         time.sleep(1 / self.game_speed_multiplier)
 
     def reset(self):
+        # Only choose a new first player if not the first game
+        if self.done:
+            self.player = random.choice(["black_0", "white_0"])
         super().reset()
 
-        # Which color do we play as
-        self.player = random.choice(["black_0", "white_0"])
         if self.verbose:
             print(
                 f"Resetting Game.\nYou are playing with the {self.player[:-2]} tiles.\nBlack plays first\n\n"
