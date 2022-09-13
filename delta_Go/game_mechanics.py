@@ -25,6 +25,7 @@ sys.path.append(str(HERE / "PettingZoo"))
 BOARD_SIZE = 9
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
 
+
 # The komi to use is much debated. 7.5 seems to
 # generalise well for different board sizes
 # lifein19x19.com/viewtopic.php?f=15&t=17750
@@ -52,7 +53,7 @@ def play_go(
     observation, reward, done, info = env.reset()
     done = False
     while not done:
-        action = your_choose_move(observation, info["legal_moves"])
+        action = your_choose_move(observation, info["legal_moves"], env=env)
         observation, reward, done, info = env.step(action)
     if render:
         time.sleep(100)
@@ -126,7 +127,7 @@ class DeltaEnv(BaseWrapper):
         if self.turn != self.player:
             self._step(
                 self.opponent_choose_move(
-                    observation=self.observation, legal_moves=self.legal_moves
+                    observation=self.observation, legal_moves=self.legal_moves, env=self
                 ),
             )
 
@@ -160,6 +161,11 @@ class DeltaEnv(BaseWrapper):
     def reward(self):
         return self.env.last()[1]
 
+    @property
+    def player_score(self):
+        black_score = self.env.env.env.env.go_game.score()  # lol
+        return black_score if self.player == "black_0" else black_score * -1
+
     def step(self, move: int):
 
         # Flipped because the env takes the step, changes the player, then we return the reward
@@ -168,30 +174,23 @@ class DeltaEnv(BaseWrapper):
         if not self.done:
             opponent_reward = self._step(
                 self.opponent_choose_move(
-                    observation=self.observation, legal_moves=self.legal_moves
+                    observation=self.observation, legal_moves=self.legal_moves, env=self
                 ),
             )
             # Flipped as above
             reward = opponent_reward
 
-        if self.done and self.verbose:
-            self.white_idx = int(self.turn_pretty == "white")
-            self.black_idx = int(self.turn_pretty == "black")
-            self.black_score = self.env.env.env.env.go_game.score()  # lol
-            self.player_score = (
-                self.black_score if self.player == "black_0" else self.black_score * -1
-            )
-            self.white_count = np.sum(
-                self.env.last()[0]["observation"].astype("int")[:, :, self.white_idx]
-            )
-            self.black_count = np.sum(
-                self.env.last()[0]["observation"].astype("int")[:, :, self.black_idx]
-            )
+        if self.verbose and self.done:
+            white_idx = int(self.turn_pretty == "white")
+            black_idx = int(self.turn_pretty == "black")
+            white_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, white_idx])
+            black_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, black_idx])
+
             print(
                 f"\nGame over. Reward = {reward}.\n"
                 f"Player was playing as {self.player[:-2]}.\n"
-                f"White has {self.white_count} counters.\n"
-                f"Black has {self.black_count} counters.\n"
+                f"White has {white_count} counters.\n"
+                f"Black has {black_count} counters.\n"
                 f"Your score is {self.player_score}.\n"
             )
 
@@ -213,11 +212,11 @@ def GoEnv(
     )
 
 
-def choose_move_randomly(observation, legal_moves):
+def choose_move_randomly(observation, legal_moves, env=None):
     return random.choice(legal_moves)
 
 
-def choose_move_pass(observation, legal_moves) -> int:
+def choose_move_pass(observation, legal_moves, env) -> int:
     """passes on every turn."""
     return BOARD_SIZE**2
 
