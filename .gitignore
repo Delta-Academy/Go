@@ -12,10 +12,9 @@ past_cohorts/
 !*winner_network.pth
 rankings/
 team_store/
+checkpoints/
 *.pkl
 !*winner.pkl
-*-env*
-*.zip
 *.prof
 
 # Byte-compiled / optimized / DLL files

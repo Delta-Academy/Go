@@ -30,7 +30,7 @@ repos:
       - id: pytest-check
         name: pytest-check
         stages: [push]
-        entry: make test
+        entry: pytest
         language: system
         pass_filenames: false
         always_run: true

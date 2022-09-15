@@ -2,11 +2,11 @@ import time
 from pathlib import Path
 from typing import Callable
 
-import delta_utils.check_submission as checker
 import numpy as np
-from torch import nn
 
+import delta_utils.check_submission as checker
 from game_mechanics import BOARD_SIZE, GoEnv, choose_move_randomly, load_pkl
+from torch import nn
 
 
 def check_submission(team_name: str, choose_move_no_network: Callable) -> None:

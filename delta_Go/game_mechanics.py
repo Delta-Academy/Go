@@ -5,16 +5,16 @@ import time
 from copy import copy, deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
+
 import torch
 from gym.spaces import Box, Discrete
-from pygame import Surface
-from torch import nn
-
 from pettingzoo.classic import go_v5
 from pettingzoo.utils import BaseWrapper
+from pygame import Surface
+from torch import nn
 
 HERE = Path(__file__).parent.resolve()
 
@@ -38,10 +38,10 @@ KOMI = 7.5
 def play_go(
     your_choose_move: Callable,
     opponent_choose_move: Callable,
-    game_speed_multiplier=1,
-    render=True,
-    verbose=False,
-) -> None:
+    game_speed_multiplier: float = 1.0,
+    render: bool = True,
+    verbose: bool = False,
+) -> float:
 
     env = GoEnv(
         opponent_choose_move,
@@ -55,8 +55,6 @@ def play_go(
     while not done:
         action = your_choose_move(observation, info["legal_moves"], env=env)
         observation, reward, done, info = env.step(action)
-    if render:
-        time.sleep(100)
     return reward
 
 
@@ -67,7 +65,7 @@ class DeltaEnv(BaseWrapper):
         opponent_choose_move: Callable,
         verbose: bool = False,
         render: bool = False,
-        game_speed_multiplier: int = 1,
+        game_speed_multiplier: float = 1.0,
     ):
 
         super().__init__(env)
@@ -82,6 +80,7 @@ class DeltaEnv(BaseWrapper):
 
         # Which color do we play as
         self.player = random.choice(["black_0", "white_0"])
+        self.first_game = True
 
     @property
     def turn(self) -> str:
@@ -117,9 +116,9 @@ class DeltaEnv(BaseWrapper):
         self.env.render(screen_override=screen)
         time.sleep(1 / self.game_speed_multiplier)
 
-    def reset(self):
+    def reset(self) -> Tuple[np.ndarray, float, bool, Dict]:
         # Only choose a new first player if not the first game
-        if self.done:
+        if not self.first_game:
             self.player = random.choice(["black_0", "white_0"])
         super().reset()
 
@@ -137,13 +136,13 @@ class DeltaEnv(BaseWrapper):
 
         return self.observation, 0, self.done, self.info
 
-    def move_to_string(self, move: int):
+    def move_to_string(self, move: int) -> str:
         N = self.observation.shape[0]
         if move == N**2:
             return "passes"
         return f"places counter at coordinate: {(move//N, move%N)}"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.observation) + "\n"
 
     def _step(self, move: int) -> float:
@@ -162,15 +161,15 @@ class DeltaEnv(BaseWrapper):
         return self.reward
 
     @property
-    def reward(self):
+    def reward(self) -> float:
         return self.env.last()[1]
 
     @property
-    def player_score(self):
+    def player_score(self) -> float:
         black_score = self.env.env.env.env.go_game.score()  # lol
         return black_score if self.player == "black_0" else black_score * -1
 
-    def step(self, move: int):
+    def step(self, move: int) -> Tuple[np.ndarray, float, bool, Dict]:
 
         # Flipped because the env takes the step, changes the player, then we return the reward
         reward = -self._step(move)
@@ -197,6 +196,7 @@ class DeltaEnv(BaseWrapper):
                 f"Black has {black_count} counters.\n"
                 f"Your score is {self.player_score}.\n"
             )
+            self.first_game = False
 
         return self.observation, reward, self.done, self.info
 
@@ -205,7 +205,7 @@ def GoEnv(
     opponent_choose_move: Callable[[np.ndarray, np.ndarray], int],
     verbose: bool = False,
     render: bool = False,
-    game_speed_multiplier: int = 1,
+    game_speed_multiplier: float = 1.0,
 ) -> DeltaEnv:
     return DeltaEnv(
         go_v5.env(board_size=BOARD_SIZE, komi=KOMI),
@@ -216,22 +216,25 @@ def GoEnv(
     )
 
 
-def choose_move_randomly(observation, legal_moves, env=None):
+def choose_move_randomly(
+    observation: np.ndarray, legal_moves: np.ndarray, env: Optional[DeltaEnv] = None
+) -> int:
     return random.choice(legal_moves)
 
 
-def choose_move_pass(observation, legal_moves, env) -> int:
+def choose_move_pass(observation: np.ndarray, legal_moves: np.ndarray, env: DeltaEnv) -> int:
     """passes on every turn."""
     return BOARD_SIZE**2
 
 
 def transition_function(env: DeltaEnv, action: int) -> DeltaEnv:
+    """TODO: LRN-855"""
     env = deepcopy(env)
     env._step(action)
     return env
 
 
-def reward_function(env: DeltaEnv):
+def reward_function(env: DeltaEnv) -> float:
     return env.reward
 
 

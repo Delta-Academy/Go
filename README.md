@@ -5,8 +5,8 @@
 ## Rules of Go
 
 Go is a two player board game. The aim is to capture territory from your opponent :guardsman:. The player that has the most territory at the end of the game is the winner.
-i
-The rules of Go are complex and many different rule-sets exist. [Wikipedia](<https://en.wikipedia.org/wiki/Go_(game)>) has a good description of the rules so we won't rehash them here.
+
+The rules of Go are complex and many different rule-sets exist. [Wikipedia](https://en.wikipedia.org/wiki/Rules_of_Go) has a good description of the rules so we won't rehash them here.
 
 The rule-set we will use here are the [CGOS](http://www.yss-aya.com/cgos/) rules that allow two bots to play each other (as other forms of Go rely on agreements between human players).
 
@@ -28,7 +28,8 @@ The score also includes a [Komi](<https://en.wikipedia.org/wiki/Go_(game)#Komi>)
 
 # Competition Rules :scroll:
 
-1. You must build an agent to play tron using either a **reinforcement learning** algorithm or a **heuristic search algorithm** (such as monte carlo tree search :deciduous_tree:)
+1. You must build an agent to play Go using either a **reinforcement learning** algorithm or a **heuristic search algorithm** (such as monte carlo tree search :deciduous_tree:) or a mix of **both**!
+
 2. You can only write code in `main.py`
 
    - You can only store data to be used in a competition in a `.pkl` file by `save_file()`.
@@ -113,7 +114,7 @@ The opponents' <code style="white-space:nowrap;">choose_move</code> functions ar
     <br />
     <br />
 
-<code style="white-space:nowrap;">GoEnv</code> has a <code style="white-space:nowrap;"> verbose</code> argument which prints the information about the game to the console when set to <code style="white-space:nowrap;">True</code>. <code style="white-space:nowrap;"> TronEnv</code> also has a render argument which visualises the game in pygame when set to <code style="white-space:nowrap;">True</code>. This allows you to visualise your AI's skills. You can play against your agent using the <code style="white-space:nowrap;">human_choose_move()</code> function!
+<code style="white-space:nowrap;">GoEnv</code> has a <code style="white-space:nowrap;"> verbose</code> argument which prints the information about the game to the console when set to <code style="white-space:nowrap;">True</code>. <code style="white-space:nowrap;"> GoEnv</code> also has a render argument which visualises the game in pygame when set to <code style="white-space:nowrap;">True</code>. This allows you to visualise your AI's skills. You can play against your agent using the <code style="white-space:nowrap;">human_choose_move()</code> function!
 
 </details>
 
@@ -128,10 +129,9 @@ Takes the state as input and outputs an action.
 <details>
 <summary><code style="white-space:nowrap;">  play_go()</code></summary>
 Plays a game of Go, which can be rendered through pygame (if <code style="white-space:nowrap;">render=True</code>).
-<!--
 You can play against your own bot if you set <code style="white-space:nowrap;">your_choose_move</code> to <code style="white-space:nowrap;">human_player</code>!
 <br />
-<br /> -->
+<br />
 
 Inputs:
 
