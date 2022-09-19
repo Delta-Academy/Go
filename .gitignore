@@ -12,8 +12,10 @@ past_cohorts/
 !*winner_network.pth
 rankings/
 team_store/
+checkpoints/
 *.pkl
 !*winner.pkl
+*.prof
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
