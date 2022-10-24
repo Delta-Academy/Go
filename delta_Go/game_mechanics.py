@@ -55,8 +55,9 @@ def play_go(
     observation, reward, done, info = env.reset()
     done = False
     while not done:
-        action = your_choose_move(observation, info["legal_moves"], env=env)
+        action = your_choose_move(observation=observation, legal_moves=info["legal_moves"], env=env)
         observation, reward, done, info = env.step(action)
+        print(observation)
     return reward
 
 
