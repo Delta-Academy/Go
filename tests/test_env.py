@@ -1,6 +1,4 @@
 import random
-import sys
-from pathlib import Path
 
 import numpy as np
 
@@ -12,13 +10,7 @@ from delta_Go.game_mechanics import (
     choose_move_pass,
     choose_move_randomly,
     play_go,
-    transition_function,
 )
-
-HERE = Path(__file__).parent.parent.resolve()
-sys.path.append(str(HERE))
-sys.path.append(str(HERE / "delta_Go"))
-
 
 PASS_MOVE = BOARD_SIZE**2
 
