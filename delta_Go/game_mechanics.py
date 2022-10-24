@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
 
+import pygame
 import torch
 from gym.spaces import Box, Discrete
 from pettingzoo.classic import go_v5
@@ -71,6 +72,8 @@ class DeltaEnv(BaseWrapper):
         super().__init__(env)
 
         self.opponent_choose_move = opponent_choose_move
+        if render:
+            pygame.init()
         self.render = render
         self.verbose = verbose
         self.game_speed_multiplier = game_speed_multiplier
@@ -261,3 +264,34 @@ def save_pkl(file: Any, team_name: str) -> None:
         except Exception:
             if attempt == n_retries - 1:
                 raise
+
+
+# Need to know the default screen size from petting zoo to get which square is clicked
+# Will not work with a screen override
+PETTING_ZOO_SCREEN_SIZE = (500, 500)
+SQUARE_SIZE = PETTING_ZOO_SCREEN_SIZE[0] // BOARD_SIZE
+LEFT = 1
+
+
+def pos_to_coord(pos: Tuple[int, int]) -> Tuple[int, int]:  # Assume square board
+    col = pos[0] // SQUARE_SIZE
+    row = pos[1] // SQUARE_SIZE
+    return row, col
+
+
+def coord_to_int(coord: Tuple[int, int]) -> int:
+    return coord[0] * BOARD_SIZE + coord[1]
+
+
+def human_player(state: np.ndarray, legal_moves: np.ndarray, env: DeltaEnv) -> int:
+
+    print("Your move, click to place a tile!")
+
+    while True:
+        ev = pygame.event.get()
+        for event in ev:
+            if event.type == pygame.MOUSEBUTTONUP and event.button == LEFT:
+                coord = pos_to_coord(pygame.mouse.get_pos())
+                action = coord_to_int(coord)
+                if action in legal_moves:
+                    return action
