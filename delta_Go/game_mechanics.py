@@ -8,15 +8,13 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
-
 import pygame
 import torch
 from gym.spaces import Box, Discrete
-from pettingzoo.classic.go.go_base import Position
-from pettingzoo.classic.go_v5 import raw_env
-from pettingzoo.utils import BaseWrapper
 from pygame import Surface
 from torch import nn
+
+from go_base import BLACK, BOARD_SIZE, WHITE, Position
 
 HERE = Path(__file__).parent.resolve()
 
@@ -24,8 +22,8 @@ HERE = Path(__file__).parent.resolve()
 sys.path.append(str(HERE / "PettingZoo"))
 
 
-BOARD_SIZE = 9
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
+PASS_MOVE = BOARD_SIZE**2
 
 
 # The komi to use is much debated. 7.5 seems to
@@ -35,6 +33,26 @@ ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
 # (non-integer means there are no draws)
 
 KOMI = 7.5
+
+
+def int_to_coord(move: int) -> Tuple[int, int]:
+    return (move // BOARD_SIZE, move % BOARD_SIZE)
+
+
+def transition_function(state: Position, action: int) -> Position:
+    coord = None if action == BOARD_SIZE**2 else int_to_coord(action)
+    return state.play_move(coord)
+
+
+def reward_function(state: Position) -> int:
+    if not state.is_game_over():
+        return 0
+    result = state.result()
+    return result if state.player_color == BLACK else result * -1
+
+
+def is_terminal(state: Position) -> bool:
+    return state.is_game_over()
 
 
 def play_go(
@@ -52,26 +70,26 @@ def play_go(
         game_speed_multiplier=game_speed_multiplier,
     )
 
-    observation, reward, done, info = env.reset()
+    state, reward, done, info = env.reset()
     done = False
     while not done:
-        action = your_choose_move(observation=observation, legal_moves=info["legal_moves"], env=env)
-        observation, reward, done, info = env.step(action)
-        print(observation)
+        action = your_choose_move(state=state)
+        state, reward, done, info = env.step(action)
     return reward
 
 
-class DeltaEnv(BaseWrapper):
+# TODO: Currently state.board is just relative to the colors (BLACK = 1, WHITE = -1)
+# Need to think about whether to change before giving to choose_moves
+
+
+class GoEnv:
     def __init__(
         self,
-        env,
         opponent_choose_move: Callable,
         verbose: bool = False,
         render: bool = False,
         game_speed_multiplier: float = 1.0,
     ):
-
-        super().__init__(env)
 
         self.opponent_choose_move = opponent_choose_move
         if render:
@@ -79,174 +97,96 @@ class DeltaEnv(BaseWrapper):
         self.render = render
         self.verbose = verbose
         self.game_speed_multiplier = game_speed_multiplier
-        self.action_space = Discrete(BOARD_SIZE**2 + 1)
-        self.observation_space = Box(low=-1, high=1, shape=(BOARD_SIZE, BOARD_SIZE))
-        self.num_envs = 1
 
         # Which color do we play as
-        self.player = random.choice(["black_0", "white_0"])
-        self.first_game = True
+
+        self.state = Position()
+
+    def render_game(self, screen: Optional[Surface] = None) -> None:
+        # TODO: copy from pettingzoo
+        pass
 
     @property
-    def turn(self) -> str:
-        return self.env.agent_selection
-
-    @property
-    def turn_pretty(self) -> str:
-        return self.turn[:-2]
-
-    @property
-    def observation(self):
-        obs = self.env.last()[0]["observation"]
-        player = obs[:, :, 0].astype("int")
-        opponent = obs[:, :, 1].astype("int")
-        return player - opponent
-
-    @property
-    def legal_moves(self):
-        mask = self.env.last()[0]["action_mask"]
-        full_space = self.env.action_space(self.turn)
-        return np.arange(full_space.n)[mask.astype(bool)]
-
-    @property
-    def info(self) -> Dict:
-        return {"legal_moves": self.legal_moves}
+    def reward(self) -> int:
+        return reward_function(self.state)
 
     @property
     def done(self) -> bool:
-        return self.env.last()[2]
+        return is_terminal(self.state)
 
-    def render_game(self, screen: Optional[Surface] = None) -> None:
+    def reset(self) -> Tuple[Position, float, bool, Dict]:
 
-        self.env.render(screen_override=screen)
-        time.sleep(1 / self.game_speed_multiplier)
-
-    def reset(self) -> Tuple[np.ndarray, float, bool, Dict]:
-        # Only choose a new first player if not the first game
-        if not self.first_game:
-            self.player = random.choice(["black_0", "white_0"])
-        super().reset()
+        # 1 is black and goes first, white is -1 and goes second
+        self.player_color = random.choice([BLACK, WHITE])
+        self.state = Position(player_color=self.player_color)
 
         if self.verbose:
             print(
-                f"Resetting Game.\nYou are playing with the {self.player[:-2]} tiles.\nBlack plays first\n\n"
+                f"Resetting Game.\nYou are playing with the {self.player_color} tiles.\nBlack plays first\n\n"
             )
 
-        if self.turn != self.player:
+        if self.state.to_play != self.player_color:
             self._step(
-                self.opponent_choose_move(
-                    observation=self.observation, legal_moves=self.legal_moves, env=self
-                ),
+                self.opponent_choose_move(state=self.state),
             )
 
-        return self.observation, 0, self.done, self.info
+        return self.state, self.reward, self.done, {}
 
     def move_to_string(self, move: int) -> str:
-        N = self.observation.shape[0]
+        N = self.state.board.shape[0]
         if move == N**2:
             return "passes"
         return f"places counter at coordinate: {(move//N, move%N)}"
 
     def __str__(self) -> str:
-        return str(self.observation) + "\n"
+        return str(self.state.board) + "\n"
 
-    def _step(self, move: int) -> float:
+    def _step(self, move: int) -> None:
 
         assert not self.done, "Game is done! Please reset() the env before calling step() again"
-        assert move in self.legal_moves, f"{move} is an illegal move"
+        assert move in self.state.legal_moves, f"{move} is an illegal move"
 
-        if self.verbose:
-            print(f"{self.turn_pretty} {self.move_to_string(move)}")
-
-        self.env.step(move)
+        self.state = transition_function(self.state, move)
 
         if self.render:
             self.render_game()
 
-        return self.reward
+    def step(self, move: int) -> Tuple[Position, int, bool, Dict]:
 
-    @property
-    def reward(self) -> float:
-        return self.env.last()[1]
-
-    @property
-    def player_score(self) -> float:
-        black_score = self.env.env.env.env.go_game.score()  # lol
-        return black_score if self.player == "black_0" else black_score * -1
-
-    def step(self, move: int) -> Tuple[np.ndarray, float, bool, Dict]:
-
-        # Flipped because the env takes the step, changes the player, then we return the reward
-        reward = -self._step(move)
+        assert self.state.to_play == self.player_color
+        self._step(move)
 
         if not self.done:
-            opponent_reward = self._step(
-                self.opponent_choose_move(
-                    observation=self.observation, legal_moves=self.legal_moves, env=self
-                ),
-            )
-            # Flipped as above
-            reward = opponent_reward
+            self._step(self.opponent_choose_move(state=self.state))
 
         if self.verbose and self.done:
-            white_idx = int(self.turn_pretty == "white")
-            black_idx = int(self.turn_pretty == "black")
-            white_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, white_idx])
-            black_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, black_idx])
+            self.nice_prints()  # Probably not needed
 
-            print(
-                f"\nGame over. Reward = {reward}.\n"
-                f"Player was playing as {self.player[:-2]}.\n"
-                f"White has {white_count} counters.\n"
-                f"Black has {black_count} counters.\n"
-                f"Your score is {self.player_score}.\n"
-            )
-            self.first_game = False
+        return self.state, self.reward, self.done, {}
 
-        return self.observation, reward, self.done, self.info
+    def nice_prints(self):
+        pass
+        # white_idx = int(self.turn_pretty == "white")
+        # black_idx = int(self.turn_pretty == "black")
+        # white_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, white_idx])
+        # black_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, black_idx])
 
-
-def GoEnv(
-    opponent_choose_move: Callable[[np.ndarray, np.ndarray], int],
-    verbose: bool = False,
-    render: bool = False,
-    game_speed_multiplier: float = 1.0,
-) -> DeltaEnv:
-    return DeltaEnv(
-        raw_env(board_size=BOARD_SIZE, komi=KOMI),
-        opponent_choose_move,
-        verbose,
-        render,
-        game_speed_multiplier=game_speed_multiplier,
-    )
+        # print(
+        #     f"\nGame over. Reward = {reward}.\n"
+        #     f"Player was playing as {self.player[:-2]}.\n"
+        #     f"White has {white_count} counters.\n"
+        #     f"Black has {black_count} counters.\n"
+        #     f"Your score is {self.player_score}.\n"
+        # )
 
 
-def choose_move_randomly(
-    observation: np.ndarray, legal_moves: np.ndarray, env: Optional[DeltaEnv] = None
-) -> int:
-    return random.choice(legal_moves)
+def choose_move_randomly(state: Position) -> int:
+    return random.choice(state.legal_moves)
 
 
-def choose_move_pass(observation: np.ndarray, legal_moves: np.ndarray, env: DeltaEnv) -> int:
-    """passes on every turn."""
-    return BOARD_SIZE**2
-
-
-def int_to_coord(move: int):
-    return (move // BOARD_SIZE, move % BOARD_SIZE)
-
-
-def transition_function(state: Position, action) -> Position:
-    """Transition function for the game of Go."""
-    if action == BOARD_SIZE**2:
-        action = None  # go_base pass representation
-    else:
-        action = int_to_coord(action)
-    return state.play_move(action)
-
-
-def reward_function(env: DeltaEnv) -> float:
-    return env.reward
+def choose_move_pass(state: Position) -> int:
+    """Always pass."""
+    return PASS_MOVE
 
 
 def load_pkl(team_name: str, network_folder: Path = HERE) -> nn.Module:
@@ -291,7 +231,7 @@ def coord_to_int(coord: Tuple[int, int]) -> int:
     return coord[0] * BOARD_SIZE + coord[1]
 
 
-def human_player(state: np.ndarray, legal_moves: np.ndarray, env: DeltaEnv) -> int:
+def human_player(state) -> int:
 
     print("Your move, click to place a tile!")
 
@@ -301,5 +241,5 @@ def human_player(state: np.ndarray, legal_moves: np.ndarray, env: DeltaEnv) -> i
             if event.type == pygame.MOUSEBUTTONUP and event.button == LEFT:
                 coord = pos_to_coord(pygame.mouse.get_pos())
                 action = coord_to_int(coord)
-                if action in legal_moves:
+                if action in state.legal_moves:
                     return action

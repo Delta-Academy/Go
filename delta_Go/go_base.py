@@ -25,12 +25,13 @@ import copy
 import itertools
 import os
 from collections import namedtuple
+from typing import Optional
 
 import numpy as np
 
 import coords
 
-N = int(os.environ.get("BOARD_SIZE", 19))
+BOARD_SIZE = 9
 
 # Represent a board as a numpy array, with 0 empty, 1 is black, -1 is white.
 # This means that swapping colors is as simple as multiplying array by -1.
@@ -39,12 +40,12 @@ WHITE, EMPTY, BLACK, FILL, KO, UNKNOWN = range(-1, 5)
 # Represents "group not found" in the LibertyTracker object
 MISSING_GROUP_ID = -1
 
-ALL_COORDS = [(i, j) for i in range(N) for j in range(N)]
-EMPTY_BOARD = np.zeros([N, N], dtype=np.int8)
+ALL_COORDS = [(i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE)]
+EMPTY_BOARD = np.zeros([BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
 
 
 def _check_bounds(c):
-    return 0 <= c[0] < N and 0 <= c[1] < N
+    return 0 <= c[0] < BOARD_SIZE and 0 <= c[1] < BOARD_SIZE
 
 
 NEIGHBORS = {
@@ -90,7 +91,7 @@ def replay_position(position, result):
         print(position_w_context.position)
     """
     assert position.n == len(position.recent), "Position history is incomplete"
-    pos = Position(komi=position.komi)
+    pos = Position(komi=position.komi, player_color=position.player_color)
     for player_move in position.recent:
         color, next_move = player_move
         yield PositionWithContext(pos, next_move, result)
@@ -181,7 +182,7 @@ class LibertyTracker:
 
         lib_tracker.max_group_id = curr_group_id
 
-        liberty_counts = np.zeros([N, N], dtype=np.uint8)
+        liberty_counts = np.zeros([BOARD_SIZE, BOARD_SIZE], dtype=np.uint8)
         for group in lib_tracker.groups.values():
             num_libs = len(group.liberties)
             for s in group.stones:
@@ -195,11 +196,15 @@ class LibertyTracker:
         # groups: a dict of group_id to groups
         # liberty_cache: a NxN numpy array of liberty counts
         self.group_index = (
-            group_index if group_index is not None else -np.ones([N, N], dtype=np.int32)
+            group_index
+            if group_index is not None
+            else -np.ones([BOARD_SIZE, BOARD_SIZE], dtype=np.int32)
         )
         self.groups = groups or {}
         self.liberty_cache = (
-            liberty_cache if liberty_cache is not None else np.zeros([N, N], dtype=np.uint8)
+            liberty_cache
+            if liberty_cache is not None
+            else np.zeros([BOARD_SIZE, BOARD_SIZE], dtype=np.uint8)
         )
         self.max_group_id = max_group_id
 
@@ -312,6 +317,7 @@ class Position:
         recent=tuple(),
         board_deltas=None,
         to_play=BLACK,
+        player_color: int = BLACK,
     ):
         """
         board: a numpy array
@@ -336,9 +342,14 @@ class Position:
         self.ko = ko
         self.recent = recent
         self.board_deltas = (
-            board_deltas if board_deltas is not None else np.zeros([0, N, N], dtype=np.int8)
+            board_deltas
+            if board_deltas is not None
+            else np.zeros([0, BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
         )
         self.to_play = to_play
+
+        # Delta addition, keep track of the color of our player
+        self.player_color = player_color
 
     def __deepcopy__(self, memodict={}):
         new_board = np.copy(self.board)
@@ -353,6 +364,7 @@ class Position:
             self.recent,
             self.board_deltas,
             self.to_play,
+            player_color=self.player_color,
         )
 
     def __str__(self, colors=True):
@@ -377,9 +389,9 @@ class Position:
         if self.ko is not None:
             place_stones(board, KO, [self.ko])
         raw_board_contents = []
-        for i in range(N):
+        for i in range(BOARD_SIZE):
             row = [" "]
-            for j in range(N):
+            for j in range(BOARD_SIZE):
                 appended = "<" if (self.recent and (i, j) == self.recent[-1].move) else " "
                 row.append(pretty_print_map[board[i, j]] + appended)
                 if colors:
@@ -387,11 +399,11 @@ class Position:
 
             raw_board_contents.append("".join(row))
 
-        row_labels = ["%2d" % i for i in range(N, 0, -1)]
+        row_labels = ["%2d" % i for i in range(BOARD_SIZE, 0, -1)]
         annotated_board_contents = [
             "".join(r) for r in zip(row_labels, raw_board_contents, row_labels)
         ]
-        header_footer_rows = ["   " + " ".join("ABCDEFGHJKLMNOPQRST"[:N]) + "   "]
+        header_footer_rows = ["   " + " ".join("ABCDEFGHJKLMNOPQRST"[:BOARD_SIZE]) + "   "]
         annotated_board = "\n".join(
             itertools.chain(header_footer_rows, annotated_board_contents, header_footer_rows)
         )
@@ -432,12 +444,12 @@ class Position:
     def all_legal_moves(self):
         "Returns a np.array of size go.N**2 + 1, with 1 = legal, 0 = illegal"
         # by default, every move is legal
-        legal_moves = np.ones([N, N], dtype=np.int8)
+        legal_moves = np.ones([BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
         # ...unless there is already a stone there
         legal_moves[self.board != EMPTY] = 0
         # calculate which spots have 4 stones next to them
         # padding is because the edge always counts as a lost liberty.
-        adjacent = np.ones([N + 2, N + 2], dtype=np.int8)
+        adjacent = np.ones([BOARD_SIZE + 2, BOARD_SIZE + 2], dtype=np.int8)
         adjacent[1:-1, 1:-1] = np.abs(self.board)
         num_adjacent_stones = (
             adjacent[:-2, 1:-1] + adjacent[1:-1, :-2] + adjacent[2:, 1:-1] + adjacent[1:-1, 2:]
@@ -462,7 +474,7 @@ class Position:
         pos.n += 1
         pos.recent += (PlayerMove(pos.to_play, None),)
         pos.board_deltas = np.concatenate(
-            (np.zeros([1, N, N], dtype=np.int8), pos.board_deltas[:6])
+            (np.zeros([1, BOARD_SIZE, BOARD_SIZE], dtype=np.int8), pos.board_deltas[:6])
         )
         pos.to_play *= -1
         pos.ko = None
@@ -508,7 +520,7 @@ class Position:
 
         opp_color = color * -1
 
-        new_board_delta = np.zeros([N, N], dtype=np.int8)
+        new_board_delta = np.zeros([BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
         new_board_delta[c] = color
         place_stones(new_board_delta, color, captured_stones)
 
@@ -529,7 +541,9 @@ class Position:
 
         # keep a rolling history of last 7 deltas - that's all we'll need to
         # extract the last 8 board states.
-        pos.board_deltas = np.concatenate((new_board_delta.reshape(1, N, N), pos.board_deltas[:6]))
+        pos.board_deltas = np.concatenate(
+            (new_board_delta.reshape(1, BOARD_SIZE, BOARD_SIZE), pos.board_deltas[:6])
+        )
         pos.to_play *= -1
         return pos
 
@@ -582,3 +596,9 @@ class Position:
             return "W+" + "%.1f" % abs(score)
         else:
             return "DRAW"
+
+    @property
+    def legal_moves(self) -> np.ndarray:
+        """Delta version of the legal moves."""
+        legal_moves_mask = self.all_legal_moves().astype(bool)
+        return np.arange(BOARD_SIZE**2 + 1)[legal_moves_mask]
