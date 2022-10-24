@@ -15,7 +15,7 @@ sys.path.append(str(HERE))
 sys.path.append(str(HERE / "delta_Go"))
 
 
-def test_transition_function():
+def test_transition_function_takes_move():
     env = GoEnv(choose_move_randomly)
     env.reset()
 
@@ -28,7 +28,11 @@ def test_transition_function():
     assert not np.array_equal(env.observation, transition_env.observation)
 
 
-def test_test_transition_function():
+def choose_move():
+    pass
 
-    for _ in tqdm(range(100)):
-        test_transition_function()
+
+def test_transition_function_takes_correct_move():
+    # TODO!!!!
+    pass
+    # env = GoEnv(choose_move_randomly)
