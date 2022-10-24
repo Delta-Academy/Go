@@ -12,7 +12,8 @@ import numpy as np
 import pygame
 import torch
 from gym.spaces import Box, Discrete
-from pettingzoo.classic import go_v5
+from pettingzoo.classic.go.go_base import Position
+from pettingzoo.classic.go_v5 import raw_env
 from pettingzoo.utils import BaseWrapper
 from pygame import Surface
 from torch import nn
@@ -211,7 +212,7 @@ def GoEnv(
     game_speed_multiplier: float = 1.0,
 ) -> DeltaEnv:
     return DeltaEnv(
-        go_v5.env(board_size=BOARD_SIZE, komi=KOMI),
+        raw_env(board_size=BOARD_SIZE, komi=KOMI),
         opponent_choose_move,
         verbose,
         render,
@@ -230,11 +231,17 @@ def choose_move_pass(observation: np.ndarray, legal_moves: np.ndarray, env: Delt
     return BOARD_SIZE**2
 
 
-def transition_function(env: DeltaEnv, action: int) -> DeltaEnv:
-    """TODO: LRN-855"""
-    env = deepcopy(env)
-    env._step(action)
-    return env
+def int_to_coord(move: int):
+    return (move // BOARD_SIZE, move % BOARD_SIZE)
+
+
+def transition_function(state: Position, action) -> Position:
+    """Transition function for the game of Go."""
+    if action == BOARD_SIZE**2:
+        action = None  # go_base pass representation
+    else:
+        action = int_to_coord(action)
+    return state.play_move(action)
 
 
 def reward_function(env: DeltaEnv) -> float:
