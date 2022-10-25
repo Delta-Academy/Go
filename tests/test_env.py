@@ -30,7 +30,7 @@ def test_play_go():
             opponent_choose_move=choose_move_pass,
             game_speed_multiplier=100,
             render=False,
-            verbose=True,
+            verbose=False,
         )
 
         assert reward == 1
@@ -107,13 +107,14 @@ def test_env_step() -> None:
     assert board[0, 1] == 1
 
     if reset_took_step:
+        # This fails if the reset passed but happens rarely
         assert np.sum(board != 0) == 3
     else:
         assert np.sum(board != 0) == 2
         assert np.all(board.ravel()[2:] == 0)
 
 
-def test_env_game_over():
+def test_env_game_over() -> None:
 
     env = GoEnv(
         choose_move_randomly,
