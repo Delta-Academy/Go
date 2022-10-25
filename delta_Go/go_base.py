@@ -22,10 +22,9 @@
 (0, 0) is considered to be the upper left corner of the board, and (18, 0) is the lower left.
 """
 import copy
-import itertools
-import os
 from collections import namedtuple
-from typing import Optional
+from dataclasses import dataclass
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -46,7 +45,7 @@ ALL_COORDS = [(i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE)]
 EMPTY_BOARD = np.zeros([BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
 
 
-def _check_bounds(c):
+def _check_bounds(c) -> bool:
     return 0 <= c[0] < BOARD_SIZE and 0 <= c[1] < BOARD_SIZE
 
 
@@ -69,15 +68,20 @@ class IllegalMove(Exception):
     pass
 
 
-class PlayerMove(namedtuple("PlayerMove", ["color", "move"])):
-    pass
+@dataclass
+class PlayerMove:
+    color: int
+    move: Optional[Tuple[int, int]]
+
+    def __hash__(self) -> int:
+        return hash((self.color, self.move))
 
 
 class PositionWithContext(namedtuple("SgfPosition", ["position", "next_move", "result"])):
     pass
 
 
-def place_stones(board, color, stones):
+def place_stones(board, color, stones) -> None:
     for s in stones:
         board[s] = color
 
@@ -116,7 +120,7 @@ def find_reached(board, c):
     return chain, reached
 
 
-def is_koish(board, c):
+def is_koish(board, c) -> Optional[int]:
     """Check if c is surrounded on all sides by 1 color, and return that color."""
     if board[c] != EMPTY:
         return None
@@ -140,12 +144,9 @@ def is_eyeish(board, c):
     if len(diagonals) < 4:
         diagonal_faults += 1
     for d in diagonals:
-        if not board[d] in (color, EMPTY):
+        if board[d] not in (color, EMPTY):
             diagonal_faults += 1
-    if diagonal_faults > 1:
-        return None
-    else:
-        return color
+    return None if diagonal_faults > 1 else color
 
 
 class Group(namedtuple("Group", ["id", "stones", "liberties", "color"])):
@@ -210,7 +211,7 @@ class LibertyTracker:
         )
         self.max_group_id = max_group_id
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict):
         new_group_index = np.copy(self.group_index)
         new_lib_cache = np.copy(self.liberty_cache)
         # shallow copy
@@ -352,7 +353,7 @@ class Position:
         # Delta addition, keep track of the color of our player
         self.player_color = player_color
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict):
         new_board = np.copy(self.board)
         new_lib_tracker = copy.deepcopy(self.lib_tracker)
         return Position(
@@ -400,7 +401,7 @@ class Position:
 
         return True
 
-    def all_legal_moves(self):
+    def all_legal_moves(self) -> np.ndarray:
         "Returns a np.array of size go.N**2 + 1, with 1 = legal, 0 = illegal"
         # by default, every move is legal
         legal_moves = np.ones([BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
@@ -429,7 +430,7 @@ class Position:
         # and pass is always legal
         return np.concatenate([legal_moves.ravel(), [1]])
 
-    def pass_move(self, mutate=False):
+    def pass_move(self, mutate: bool = False):
         pos = self if mutate else copy.deepcopy(self)
         pos.n += 1
         pos.recent += (PlayerMove(pos.to_play, None),)
@@ -535,7 +536,7 @@ class Position:
             - self.komi
         )
 
-    def result(self):
+    def result(self) -> int:
         score = self.score()
         if score > 0:
             return 1
