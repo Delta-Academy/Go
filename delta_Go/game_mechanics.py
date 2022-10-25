@@ -18,13 +18,13 @@ from go_base import (
     BLACK,
     BOARD_SIZE,
     WHITE,
-    State,
     all_legal_moves,
     game_over,
     is_move_legal,
     play_move,
     result,
 )
+from state import State
 
 HERE = Path(__file__).parent.resolve()
 

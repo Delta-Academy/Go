@@ -11,7 +11,8 @@ from delta_Go.game_mechanics import (
     choose_move_randomly,
     play_go,
 )
-from delta_Go.go_base import State, all_legal_moves, score
+from delta_Go.go_base import all_legal_moves, score
+from delta_Go.state import State
 
 PASS_MOVE = BOARD_SIZE**2
 
