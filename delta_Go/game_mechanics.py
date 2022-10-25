@@ -5,9 +5,12 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
-
 import pygame
 import torch
+from gym.spaces import Box, Discrete
+from pygame import Surface
+from torch import nn
+
 from go_base import (
     BLACK,
     BOARD_SIZE,
@@ -19,11 +22,10 @@ from go_base import (
     is_move_legal,
     play_move,
     result,
+    score,
 )
-from gym.spaces import Box, Discrete
-from pygame import Surface
+from render import render_game
 from state import State
-from torch import nn
 
 HERE = Path(__file__).parent.resolve()
 
@@ -33,6 +35,8 @@ sys.path.append(str(HERE / "PettingZoo"))
 
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
 
+# Visuals
+SCREEN_SIZE = (500, 500)
 
 # The komi to use is much debated. 7.5 seems to
 # generalise well for different board sizes
@@ -96,8 +100,6 @@ class GoEnv:
     ):
 
         self.opponent_choose_move = opponent_choose_move
-        if render:
-            pygame.init()
         self.render = render
         self.verbose = verbose
         self.game_speed_multiplier = game_speed_multiplier
@@ -106,9 +108,19 @@ class GoEnv:
 
         self.state = State()
 
-    def render_game(self, screen: Optional[Surface] = None) -> None:
-        # TODO: copy from pettingzoo
-        pass
+        if render:
+            self.init_visuals()
+
+    def init_visuals(self) -> None:
+        pygame.init()
+        self.screen = pygame.display.set_mode(SCREEN_SIZE)
+        pygame.display.set_caption("Go")
+        self._render_game()
+
+    def _render_game(
+        self,
+    ) -> None:
+        render_game(self.state.board, screen=self.screen)
 
     @property
     def reward(self) -> int:
@@ -122,11 +134,13 @@ class GoEnv:
 
         # 1 is black and goes first, white is -1 and goes second
         self.player_color = random.choice([BLACK, WHITE])
+        self.color_str = "Black" if self.player_color == BLACK else "White"
+
         self.state = State(player_color=self.player_color)
 
         if self.verbose:
             print(
-                f"Resetting Game.\nYou are playing with the {self.player_color} tiles.\nBlack plays first\n\n"
+                f"Resetting Game.\nYou are playing with the {self.color_str} tiles.\nBlack plays first\n\n"
             )
 
         if self.state.to_play != self.player_color:
@@ -147,6 +161,10 @@ class GoEnv:
 
     def _step(self, move: int) -> None:
 
+        if self.verbose:
+            name = "player" if self.state.to_play == self.player_color else "opponent"
+            print(f"{name} {self.move_to_string(move)}")
+
         assert not self.done, "Game is done! Please reset() the env before calling step() again"
         assert is_move_legal(
             int_to_coord(move), self.state.board, self.state.ko
@@ -155,7 +173,7 @@ class GoEnv:
         self.state = transition_function(self.state, move)
 
         if self.render:
-            self.render_game()
+            self._render_game()
 
     def step(self, move: int) -> Tuple[State, int, bool, Dict]:
 
@@ -171,19 +189,13 @@ class GoEnv:
         return self.state, self.reward, self.done, {}
 
     def nice_prints(self):
-        pass
-        # white_idx = int(self.turn_pretty == "white")
-        # black_idx = int(self.turn_pretty == "black")
-        # white_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, white_idx])
-        # black_count = np.sum(self.env.last()[0]["observation"].astype("int")[:, :, black_idx])
-
-        # print(
-        #     f"\nGame over. Reward = {reward}.\n"
-        #     f"Player was playing as {self.player[:-2]}.\n"
-        #     f"White has {white_count} counters.\n"
-        #     f"Black has {black_count} counters.\n"
-        #     f"Your score is {self.player_score}.\n"
-        # )
+        print(
+            f"\nGame over. Reward = {self.reward}.\n"
+            f"Player was playing as {self.color_str}\n"
+            f"Black has {np.sum(self.state.board==1)} counters.\n"
+            f"White has {np.sum(self.state.board==-1)} counters.\n"
+            f"Your score is {score(self.state.board, KOMI)}.\n"
+        )
 
 
 def choose_move_randomly(state: State) -> int:
@@ -222,8 +234,7 @@ def save_pkl(file: Any, team_name: str) -> None:
 
 # Need to know the default screen size from petting zoo to get which square is clicked
 # Will not work with a screen override
-PETTING_ZOO_SCREEN_SIZE = (500, 500)
-SQUARE_SIZE = PETTING_ZOO_SCREEN_SIZE[0] // BOARD_SIZE
+SQUARE_SIZE = SCREEN_SIZE[0] // BOARD_SIZE
 LEFT = 1
 
 
@@ -240,6 +251,10 @@ def coord_to_int(coord: Tuple[int, int]) -> int:
 def human_player(state) -> int:
 
     print("Your move, click to place a tile!")
+    legal_moves = all_legal_moves(state.board, state.ko)
+    if len(legal_moves) == 1:
+        print("You have no legal moves, so you pass")
+        return legal_moves[0]
 
     while True:
         ev = pygame.event.get()
@@ -247,5 +262,5 @@ def human_player(state) -> int:
             if event.type == pygame.MOUSEBUTTONUP and event.button == LEFT:
                 coord = pos_to_coord(pygame.mouse.get_pos())
                 action = coord_to_int(coord)
-                if action in state.legal_moves:
+                if action in legal_moves:
                     return action
