@@ -10,6 +10,7 @@ from delta_Go.game_mechanics import (
     choose_move_pass,
     transition_function,
 )
+from delta_Go.go_base import all_legal_moves, game_over
 
 
 def test_transition_function_takes_move():
@@ -43,11 +44,12 @@ def test_transition_function_correct_move():
     np.testing.assert_array_equal(env.state.board, new_board)
 
 
-def test_transition_function_no_in_place_mutation():
+def test_transition_function_no_in_place_mutation() -> None:
 
     state, _, _, _ = GoEnv(choose_move_pass).reset()  # Will leave a new game board after reset
-    while not state.is_game_over():
-        action = random.choice(state.legal_moves)
+    while not game_over(state.recent):
+        action = random.choice(all_legal_moves(state.board, state.ko))
+
         new_state = transition_function(state, action=action)
         if action != PASS_MOVE:
             assert not np.array_equal(new_state.board, state.board)

@@ -5,18 +5,19 @@ import numpy as np
 from delta_Go.game_mechanics import (
     BLACK,
     BOARD_SIZE,
+    KOMI,
     GoEnv,
-    Position,
     choose_move_pass,
     choose_move_randomly,
     play_go,
 )
+from delta_Go.go_base import State, all_legal_moves, score
 
 PASS_MOVE = BOARD_SIZE**2
 
 
 def choose_move_pass_at_end(state):
-    legal_moves = state.legal_moves
+    legal_moves = all_legal_moves(state.board, state.ko)
     if len(legal_moves) < 10:
         return PASS_MOVE
     return random.choice(legal_moves[legal_moves != BOARD_SIZE**2])
@@ -46,8 +47,9 @@ def test_env_reset():
     assert done == False
     assert reward == 0
     assert state.board.shape == (BOARD_SIZE, BOARD_SIZE)
-    assert max(state.legal_moves) <= BOARD_SIZE**2
-    assert min(state.legal_moves) >= 0
+    legal_moves = all_legal_moves(state.board, state.ko)
+    assert max(legal_moves) <= BOARD_SIZE**2
+    assert min(legal_moves) >= 0
 
 
 def test_env__step() -> None:
@@ -71,8 +73,9 @@ def test_env__step() -> None:
     assert env.done == False
 
 
-def choose_move_top_left(state: Position):
-    legal_moves = state.legal_moves
+def choose_move_top_left(state: State) -> int:
+
+    legal_moves = all_legal_moves(state.board, state.ko)
     return 0 if 0 in legal_moves else random.choice(legal_moves)
 
 
@@ -97,9 +100,10 @@ def test_env_step() -> None:
     state, reward, done, info = env.step(1)
     assert done == False
     assert reward == 0
-    assert max(state.legal_moves) <= BOARD_SIZE**2
-    assert min(state.legal_moves) >= 0
-    assert len(state.legal_moves) <= BOARD_SIZE**2 - 1
+    legal_moves = all_legal_moves(state.board, state.ko)
+    assert max(legal_moves) <= BOARD_SIZE**2
+    assert min(legal_moves) >= 0
+    assert len(legal_moves) <= BOARD_SIZE**2 - 1
 
     board = state.board * env.player_color
 
@@ -129,13 +133,14 @@ def test_env_game_over() -> None:
     assert action == PASS_MOVE
 
     # Probably can be refactored but oh well
-    if state.score() > 0 and state.player_color == BLACK:
+    score_ = score(state.board, KOMI)
+    if score_ > 0 and state.player_color == BLACK:
         assert reward == 1
-    elif state.score() < 0 and state.player_color == BLACK:
+    elif score_ < 0 and state.player_color == BLACK:
         assert reward == -1
-    elif state.score() > 0 and state.player_color != BLACK:
+    elif score_ > 0:
         assert reward == -1
-    elif state.score() < 0 and state.player_color != BLACK:
+    elif score_ < 0:
         assert reward == 1
 
 
