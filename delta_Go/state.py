@@ -1,11 +1,11 @@
 import copy
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 
 import numpy as np
 
-from go_base import BLACK, BOARD_SIZE, EMPTY_BOARD, PlayerMove
 from liberty_tracker import LibertyTracker
+from utils import BLACK, PlayerMove, EMPTY_BOARD
 
 
 @dataclass
@@ -14,27 +14,26 @@ class State:
 
     Args:
         board: [BOARD_SIZE, BOARD_SIZE] np array of ints
-        komi:  the handicap number of points given to white
-        caps: number of captured stones for each player (b, w)
-        lib_tracker: a LibertyTracker object. Used for caching available liberties for speedup.
-                    Gives a speedup of 5x!
-        ko: a tuple (x, y) of the last move that was a ko, or None if no ko
-        recent: a tuple of PlayerMoves, such that recent[-1] is the last move.
+        recent_moves: a tuple of PlayerMoves, such that recent[-1] is the last move.
+        to_play: BLACK or WHITE
+        player_color: Keeps track of white color (BLACK or WHITE) you are playing as
+
+        ko: a tuple (x, y) if the last move that was a ko, or None if no ko
         board_deltas: a np.array of shape (n, go.N, go.N) representing changes
             made to the board at each move (played move and captures).
             Should satisfy next_pos.board - next_pos.board_deltas[0] == pos.board
-        to_play: BLACK or WHITE
-        player_color: Keeps track of white color (BLACK or WHITE) you are playing as
+        lib_tracker: a LibertyTracker object. Used for caching available liberties for speedup.
+                    Gives a speedup of 5x!
     """
 
     board: np.ndarray = EMPTY_BOARD
-    lib_tracker: LibertyTracker = LibertyTracker.from_board(board)
-    caps: Tuple[int, int] = (0, 0)
-    ko: Optional[Tuple[int, int]] = None
-    recent: Tuple[PlayerMove, ...] = tuple()
-    board_deltas: np.ndarray = np.zeros([0, BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
+    recent_moves: Tuple[PlayerMove, ...] = tuple()
     to_play: int = BLACK
     player_color: int = BLACK
+
+    ko: Optional[Tuple[int, int]] = None
+    board_deltas: Optional[List[np.ndarray]] = None
+    lib_tracker: LibertyTracker = LibertyTracker.from_board(board)
 
     def __deepcopy__(self, memodict: Dict) -> "State":
         new_board = np.copy(self.board)
@@ -42,10 +41,9 @@ class State:
         return State(
             board=new_board,
             lib_tracker=new_lib_tracker,
-            caps=self.caps,
             ko=self.ko,
-            recent=self.recent,
-            board_deltas=self.board_deltas,
+            recent_moves=self.recent_moves,
             to_play=self.to_play,
             player_color=self.player_color,
+            board_deltas=self.board_deltas,
         )
