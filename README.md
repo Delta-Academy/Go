@@ -159,7 +159,7 @@ However there are only 3 important attributes you *need* to know about:
   - `0` = empty
   - `1` = black stone
   - There are other possible values, but these aren't important
-  
+
 - `recent_moves`: a tuple of all `PlayerMove`s made in the game so far. This is useful for keeping track of the game history & **as a unique identifier for a state**. :wink:
 
 - `to_play`: signifies whose turn it is to play at the current state. Either `BLACK` or `WHITE`.
@@ -187,7 +187,7 @@ A dataclass that simply represents a move made by a player.
 It has 2 attributes:
 
 <code style="white-space:nowrap;">color</code>: either <code style="white-space:nowrap;"> WHITE</code> or <code style="white-space:nowrap;">BLACK</code>
-   
+
 <code style="white-space:nowrap;"> move</code>: the move made by the player. This is either an integer in the range <code style="white-space:nowrap;">0-81</code> (inclusive) or <code style="white-space:nowrap;">None</code> if the player passes.
 </details>
 
@@ -216,4 +216,3 @@ Returns `True` if the game is over, `False` otherwise.
 Takes the `State` as input.
 
 </details>
-

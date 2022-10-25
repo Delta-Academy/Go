@@ -1,19 +1,10 @@
 import copy
-from typing import Optional, Set, Dict
+from typing import Dict, Optional, Set
 
 import numpy as np
 
-from go_base import (
-    BLACK,
-    BOARD_SIZE,
-    EMPTY,
-    NEIGHBORS,
-    WHITE,
-    Group,
-    find_reached,
-    place_stones,
-)
-from utils import FILL, MISSING_GROUP_ID
+from go_base import Group, find_reached, place_stones
+from utils import BLACK, BOARD_SIZE, EMPTY, FILL, MISSING_GROUP_ID, NEIGHBORS, WHITE
 
 
 class LibertyTracker:
@@ -46,7 +37,13 @@ class LibertyTracker:
 
         return lib_tracker
 
-    def __init__(self, group_index: Optional[np.ndarray] = None, groups: Optional[Dict] = None, liberty_cache: Optional[np.ndarray] = None, max_group_id: int = 1):
+    def __init__(
+        self,
+        group_index: Optional[np.ndarray] = None,
+        groups: Optional[Dict] = None,
+        liberty_cache: Optional[np.ndarray] = None,
+        max_group_id: int = 1,
+    ):
         # group_index: a NxN numpy array of group_ids. -1 means no group
         # groups: a dict of group_id to groups
         # liberty_cache: a NxN numpy array of liberty counts
@@ -63,7 +60,7 @@ class LibertyTracker:
         )
         self.max_group_id = max_group_id
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         new_group_index = np.copy(self.group_index)
         new_lib_cache = np.copy(self.liberty_cache)
         # shallow copy

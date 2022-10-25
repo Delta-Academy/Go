@@ -29,8 +29,21 @@ from typing import Iterable, Optional, Set, Tuple
 import numpy as np
 
 import coords
-from state import State
-from utils import NEIGHBORS, BLACK, WHITE, EMPTY, UNKNOWN, DIAGONALS, BOARD_SIZE, PASS_MOVE, PlayerMove, int_to_coord, IllegalMove
+from utils import (
+    BLACK,
+    BOARD_SIZE,
+    DIAGONALS,
+    EMPTY,
+    NEIGHBORS,
+    PASS_MOVE,
+    UNKNOWN,
+    WHITE,
+    IllegalMove,
+    PlayerMove,
+    int_to_coord,
+)
+
+# from state import State
 
 
 class PositionWithContext(namedtuple("SgfPosition", ["position", "next_move", "result"])):
@@ -41,7 +54,8 @@ def place_stones(board: np.ndarray, color: int, stones: Iterable[Tuple[int, int]
     for s in stones:
         board[s] = color
 
-def pass_move(state: State, mutate: bool = False):
+
+def pass_move(state, mutate: bool = False):
     pos = state if mutate else copy.deepcopy(state)
     pos.recent_moves += (PlayerMove(pos.to_play, PASS_MOVE),)
     pos.board_deltas = [np.zeros([1, BOARD_SIZE, BOARD_SIZE], dtype=np.int8)] + pos.board_deltas[:6]
@@ -102,12 +116,17 @@ class Group:
     liberties: a frozenset of Coordinates that are empty and adjacent to this group.
     color: color of this group
     """
+
     id: int
     stones: frozenset
     liberties: frozenset
     color: int
 
-    def __eq__(self, other: "Group") -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Group):
+            # raise NotImplementedError("Can only compare Group to Group")
+            return NotImplemented
+
         return (
             self.stones == other.stones
             and self.liberties == other.liberties
@@ -138,7 +157,7 @@ def all_legal_moves(board: np.ndarray, ko: Optional[Tuple[int, int]]) -> np.ndar
     if ko is not None:
         legal_moves[ko] = False
     # Concat with pass move
-    return np.arange(BOARD_SIZE**2 + 1)[legal_moves.ravel().tolist() + [1]]
+    return np.arange(BOARD_SIZE**2 + 1)[legal_moves.ravel().tolist() + [True]]
 
 
 def play_move(state, move: int, color=None, mutate=False):

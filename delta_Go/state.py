@@ -1,11 +1,11 @@
 import copy
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
 from liberty_tracker import LibertyTracker
-from utils import BLACK, PlayerMove, EMPTY_BOARD
+from utils import BLACK, EMPTY_BOARD, PlayerMove
 
 
 @dataclass
@@ -47,3 +47,7 @@ class State:
             player_color=self.player_color,
             board_deltas=self.board_deltas,
         )
+
+    def __post_init__(self):
+        if self.board_deltas is None:
+            self.board_deltas = []
