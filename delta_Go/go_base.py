@@ -32,7 +32,6 @@ import coords
 
 BOARD_SIZE = 9
 
-ALLOW_SUICIDE = True
 
 # Represent a board as a numpy array, with 0 empty, 1 is black, -1 is white.
 # This means that swapping colors is as simple as multiplying array by -1.
@@ -62,149 +61,6 @@ DIAGONALS = {
     )
     for x, y in ALL_COORDS
 }
-
-
-class LibertyTracker:
-    @staticmethod
-    def from_board(board):
-        board = np.copy(board)
-        curr_group_id = 0
-        lib_tracker = LibertyTracker()
-        for color in (WHITE, BLACK):
-            while color in board:
-                curr_group_id += 1
-                found_color = np.where(board == color)
-                coord = found_color[0][0], found_color[1][0]
-                chain, reached = find_reached(board, coord)
-                liberties = frozenset(r for r in reached if board[r] == EMPTY)
-                new_group = Group(curr_group_id, frozenset(chain), liberties, color)
-                lib_tracker.groups[curr_group_id] = new_group
-                for s in chain:
-                    lib_tracker.group_index[s] = curr_group_id
-                place_stones(board, FILL, chain)
-
-        lib_tracker.max_group_id = curr_group_id
-
-        liberty_counts = np.zeros([BOARD_SIZE, BOARD_SIZE], dtype=np.uint8)
-        for group in lib_tracker.groups.values():
-            num_libs = len(group.liberties)
-            for s in group.stones:
-                liberty_counts[s] = num_libs
-        lib_tracker.liberty_cache = liberty_counts
-
-        return lib_tracker
-
-    def __init__(self, group_index=None, groups=None, liberty_cache=None, max_group_id=1):
-        # group_index: a NxN numpy array of group_ids. -1 means no group
-        # groups: a dict of group_id to groups
-        # liberty_cache: a NxN numpy array of liberty counts
-        self.group_index = (
-            group_index
-            if group_index is not None
-            else -np.ones([BOARD_SIZE, BOARD_SIZE], dtype=np.int32)
-        )
-        self.groups = groups or {}
-        self.liberty_cache = (
-            liberty_cache
-            if liberty_cache is not None
-            else np.zeros([BOARD_SIZE, BOARD_SIZE], dtype=np.uint8)
-        )
-        self.max_group_id = max_group_id
-
-    def __deepcopy__(self, memodict):
-        new_group_index = np.copy(self.group_index)
-        new_lib_cache = np.copy(self.liberty_cache)
-        # shallow copy
-        new_groups = copy.copy(self.groups)
-        return LibertyTracker(
-            new_group_index,
-            new_groups,
-            liberty_cache=new_lib_cache,
-            max_group_id=self.max_group_id,
-        )
-
-    def add_stone(self, color, c):
-        assert self.group_index[c] == MISSING_GROUP_ID
-        captured_stones = set()
-        opponent_neighboring_group_ids = set()
-        friendly_neighboring_group_ids = set()
-        empty_neighbors = set()
-
-        for n in NEIGHBORS[c]:
-            neighbor_group_id = self.group_index[n]
-            if neighbor_group_id != MISSING_GROUP_ID:
-                neighbor_group = self.groups[neighbor_group_id]
-                if neighbor_group.color == color:
-                    friendly_neighboring_group_ids.add(neighbor_group_id)
-                else:
-                    opponent_neighboring_group_ids.add(neighbor_group_id)
-            else:
-                empty_neighbors.add(n)
-
-        new_group = self._merge_from_played(
-            color, c, empty_neighbors, friendly_neighboring_group_ids
-        )
-
-        # new_group becomes stale as _update_liberties and
-        # _handle_captures are called; must refetch with self.groups[new_group.id]
-        for group_id in opponent_neighboring_group_ids:
-            neighbor_group = self.groups[group_id]
-            if len(neighbor_group.liberties) == 1:
-                captured = self._capture_group(group_id)
-                captured_stones.update(captured)
-            else:
-                self._update_liberties(group_id, remove={c})
-
-        self._handle_captures(captured_stones)
-
-        if not ALLOW_SUICIDE and len(self.groups[new_group.id].liberties) == 0:
-            raise IllegalMove(f"Move at {c} would commit suicide!\n")
-
-        return captured_stones
-
-    def _merge_from_played(self, color, played, libs, other_group_ids):
-        stones = {played}
-        liberties = set(libs)
-        for group_id in other_group_ids:
-            other = self.groups.pop(group_id)
-            stones.update(other.stones)
-            liberties.update(other.liberties)
-
-        if other_group_ids:
-            liberties.remove(played)
-        assert stones.isdisjoint(liberties)
-        self.max_group_id += 1
-        result = Group(self.max_group_id, frozenset(stones), frozenset(liberties), color)
-        self.groups[result.id] = result
-
-        for s in result.stones:
-            self.group_index[s] = result.id
-            self.liberty_cache[s] = len(result.liberties)
-
-        return result
-
-    def _capture_group(self, group_id):
-        dead_group = self.groups.pop(group_id)
-        for s in dead_group.stones:
-            self.group_index[s] = MISSING_GROUP_ID
-            self.liberty_cache[s] = 0
-        return dead_group.stones
-
-    def _update_liberties(self, group_id, add=set(), remove=set()):
-        group = self.groups[group_id]
-        new_libs = (group.liberties | add) - remove
-        self.groups[group_id] = Group(group_id, group.stones, new_libs, group.color)
-
-        new_lib_count = len(new_libs)
-        for s in self.groups[group_id].stones:
-            self.liberty_cache[s] = new_lib_count
-
-    def _handle_captures(self, captured_stones):
-        for s in captured_stones:
-            for n in NEIGHBORS[s]:
-                group_id = self.group_index[n]
-                if group_id != MISSING_GROUP_ID:
-                    self._update_liberties(group_id, add={s})
 
 
 class IllegalMove(Exception):
@@ -289,49 +145,6 @@ class Group(namedtuple("Group", ["id", "stones", "liberties", "color"])):
         )
 
 
-@dataclass
-class State:
-
-    """
-    TODO: Improve docstring
-
-    board: a numpy array
-    n: an int representing moves played so far
-    komi: a float, representing points given to the second player.
-    caps: a (int, int) tuple of captures for B, W.
-    lib_tracker: a LibertyTracker object
-    ko: a Move
-    recent: a tuple of PlayerMoves, such that recent[-1] is the last move.
-    board_deltas: a np.array of shape (n, go.N, go.N) representing changes
-        made to the board at each move (played move and captures).
-        Should satisfy next_pos.board - next_pos.board_deltas[0] == pos.board
-    to_play: BLACK or WHITE
-    """
-
-    board: np.ndarray = EMPTY_BOARD
-    lib_tracker: LibertyTracker = LibertyTracker.from_board(board)
-    caps: Tuple[int, int] = (0, 0)
-    ko: Optional[Tuple[int, int]] = None
-    recent: Tuple[PlayerMove, ...] = tuple()
-    board_deltas: np.ndarray = np.zeros([0, BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
-    to_play: int = BLACK
-    player_color: int = BLACK
-
-    def __deepcopy__(self, memodict: Dict) -> "State":
-        new_board = np.copy(self.board)
-        new_lib_tracker = copy.deepcopy(self.lib_tracker)
-        return State(
-            board=new_board,
-            lib_tracker=new_lib_tracker,
-            caps=self.caps,
-            ko=self.ko,
-            recent=self.recent,
-            board_deltas=self.board_deltas,
-            to_play=self.to_play,
-            player_color=self.player_color,
-        )
-
-
 def is_move_legal(
     move: Optional[Tuple[int, int]], board: np.ndarray, ko: Optional[Tuple[int, int]] = None
 ) -> bool:
@@ -372,17 +185,6 @@ def pass_move(state, mutate: bool = False):
     pos.to_play *= -1
     pos.ko = None
     return pos
-
-
-def flip_playerturn(state, mutate=False):
-    pos = state if mutate else copy.deepcopy(state)
-    pos.ko = None
-    pos.to_play *= -1
-    return pos
-
-
-def get_liberties(self):
-    return self.lib_tracker.liberty_cache
 
 
 def play_move(state, move, color=None, mutate=False):

@@ -1,4 +1,19 @@
+import copy
+
 import numpy as np
+
+from go_base import (
+    BLACK,
+    BOARD_SIZE,
+    EMPTY,
+    FILL,
+    MISSING_GROUP_ID,
+    NEIGHBORS,
+    WHITE,
+    Group,
+    find_reached,
+    place_stones,
+)
 
 
 class LibertyTracker:
@@ -93,9 +108,6 @@ class LibertyTracker:
                 self._update_liberties(group_id, remove={c})
 
         self._handle_captures(captured_stones)
-
-        if not ALLOW_SUICIDE and len(self.groups[new_group.id].liberties) == 0:
-            raise IllegalMove(f"Move at {c} would commit suicide!\n")
 
         return captured_stones
 

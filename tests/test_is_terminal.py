@@ -1,5 +1,5 @@
 from delta_Go.game_mechanics import BOARD_SIZE, is_terminal, transition_function
-from delta_Go.go_base import State
+from delta_Go.state import State
 
 
 def test_is_terminal() -> None:
