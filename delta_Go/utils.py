@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -12,13 +12,13 @@ WHITE, EMPTY, BLACK, FILL, _, UNKNOWN = range(-1, 5)
 
 @dataclass
 class PlayerMove:
-    """
-    A simple class representing a move made by a player.
+    """A simple class representing a move made by a player.
 
     Args:
         color: BLACK or WHITE
         move: integer representing the move made
     """
+
     color: int
     move: int
 
@@ -60,11 +60,9 @@ class IllegalMove(Exception):
 
 
 def int_to_coord(move: int) -> Optional[Tuple[int, int]]:
-    """
-    Converts an integer move to a coordinate.
+    """Converts an integer move to a coordinate.
 
-    Our choose_move() function outputs an integer and these are
-     converted to a tuple of (x, y) coordinates which is used by
-     go_base.
+    Our choose_move() function outputs an integer and these are  converted to a tuple of (x, y)
+    coordinates which is used by  go_base.
     """
     return None if move == PASS_MOVE else (move // BOARD_SIZE, move % BOARD_SIZE)
