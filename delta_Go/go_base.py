@@ -122,7 +122,7 @@ class Group:
     liberties: frozenset
     color: int
 
-    def __eq__(self, other: object) -> Union[bool, NotImplemented]:
+    def __eq__(self, other: object) -> bool:
         return (
             (
                 self.stones == other.stones
