@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Code from: https://github.com/tensorflow/minigo
+# Code adapted from: https://github.com/tensorflow/minigo
 
 """A board is a NxN numpy array. A Coordinate is a tuple index into the board. A Move is a
 (Coordinate c | None). A PlayerMove is a (Color, Move) tuple.
@@ -24,63 +24,13 @@
 import copy
 from collections import namedtuple
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Set, Tuple
+from typing import Iterable, Optional, Set, Tuple
 
 import numpy as np
 
 import coords
-
-BOARD_SIZE = 9
-
-
-# Represent a board as a numpy array, with 0 empty, 1 is black, -1 is white.
-# This means that swapping colors is as simple as multiplying array by -1.
-WHITE, EMPTY, BLACK, FILL, KO, UNKNOWN = range(-1, 5)
-
-# Represents "group not found" in the LibertyTracker object
-MISSING_GROUP_ID = -1
-
-ALL_COORDS = [(i, j) for i in range(BOARD_SIZE) for j in range(BOARD_SIZE)]
-EMPTY_BOARD = np.zeros([BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
-
-
-PASS_MOVE = BOARD_SIZE**2
-
-
-def _check_bounds(c: Tuple[int, int]) -> bool:
-    return 0 <= c[0] < BOARD_SIZE and 0 <= c[1] < BOARD_SIZE
-
-
-NEIGHBORS = {
-    (x, y): list(filter(_check_bounds, [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]))
-    for x, y in ALL_COORDS
-}
-DIAGONALS = {
-    (x, y): list(
-        filter(
-            _check_bounds,
-            [(x + 1, y + 1), (x + 1, y - 1), (x - 1, y + 1), (x - 1, y - 1)],
-        )
-    )
-    for x, y in ALL_COORDS
-}
-
-
-class IllegalMove(Exception):
-    pass
-
-
-def int_to_coord(move: int) -> Optional[Tuple[int, int]]:
-    return None if move == PASS_MOVE else (move // BOARD_SIZE, move % BOARD_SIZE)
-
-
-@dataclass
-class PlayerMove:
-    color: int
-    move: int
-
-    def __hash__(self) -> int:
-        return hash((self.color, self.move))
+from state import State
+from utils import NEIGHBORS, BLACK, WHITE, EMPTY, UNKNOWN, DIAGONALS, BOARD_SIZE, PASS_MOVE, PlayerMove, int_to_coord, IllegalMove
 
 
 class PositionWithContext(namedtuple("SgfPosition", ["position", "next_move", "result"])):
@@ -90,6 +40,14 @@ class PositionWithContext(namedtuple("SgfPosition", ["position", "next_move", "r
 def place_stones(board: np.ndarray, color: int, stones: Iterable[Tuple[int, int]]) -> None:
     for s in stones:
         board[s] = color
+
+def pass_move(state: State, mutate: bool = False):
+    pos = state if mutate else copy.deepcopy(state)
+    pos.recent_moves += (PlayerMove(pos.to_play, PASS_MOVE),)
+    pos.board_deltas = [np.zeros([1, BOARD_SIZE, BOARD_SIZE], dtype=np.int8)] + pos.board_deltas[:6]
+    pos.to_play *= -1
+    pos.ko = None
+    return pos
 
 
 def find_reached(board: np.ndarray, c: Tuple[int, int]) -> Tuple[Set, Set]:
@@ -108,27 +66,27 @@ def find_reached(board: np.ndarray, c: Tuple[int, int]) -> Tuple[Set, Set]:
     return chain, reached
 
 
-def is_koish(board, c) -> Optional[int]:
+def is_koish(board: np.ndarray, coord: Tuple[int, int]) -> Optional[int]:
     """Check if c is surrounded on all sides by 1 color, and return that color."""
-    if board[c] != EMPTY:
+    if board[coord] != EMPTY:
         return None
-    neighbors = {board[n] for n in NEIGHBORS[c]}
+    neighbors = {board[n] for n in NEIGHBORS[coord]}
     if len(neighbors) == 1 and EMPTY not in neighbors:
         return list(neighbors)[0]
     else:
         return None
 
 
-def is_eyeish(board, c):
+def is_eyeish(board: np.ndarray, coord: Optional[Tuple[int, int]]):
     """Check if c is an eye, for the purpose of restricting MC rollouts."""
     # pass is fine.
-    if c is None:
+    if coord is None:
         return
-    color = is_koish(board, c)
+    color = is_koish(board, coord)
     if color is None:
         return None
     diagonal_faults = 0
-    diagonals = DIAGONALS[c]
+    diagonals = DIAGONALS[coord]
     if len(diagonals) < 4:
         diagonal_faults += 1
     for d in diagonals:
@@ -137,14 +95,19 @@ def is_eyeish(board, c):
     return None if diagonal_faults > 1 else color
 
 
-class Group(namedtuple("Group", ["id", "stones", "liberties", "color"])):
+@dataclass
+class Group:
     """
     stones: a frozenset of Coordinates belonging to this group
     liberties: a frozenset of Coordinates that are empty and adjacent to this group.
     color: color of this group
     """
+    id: int
+    stones: frozenset
+    liberties: frozenset
+    color: int
 
-    def __eq__(self, other):
+    def __eq__(self, other: "Group") -> bool:
         return (
             self.stones == other.stones
             and self.liberties == other.liberties
@@ -161,31 +124,21 @@ def is_move_legal(
     return False if board[move] != EMPTY else move != ko
 
 
+ALL_MOVES = np.ones([BOARD_SIZE, BOARD_SIZE], dtype=bool)
+
+
 def all_legal_moves(board: np.ndarray, ko: Optional[Tuple[int, int]]) -> np.ndarray:
     "Returns a np.array of size go.N**2 + 1, with 1 = legal, 0 = illegal"
     # by default, every move is legal
-    legal_moves = np.ones([BOARD_SIZE, BOARD_SIZE], dtype=np.int8)
+    legal_moves = np.copy(ALL_MOVES)
     # ...unless there is already a stone there
-    legal_moves[board != EMPTY] = 0
+    legal_moves[board != EMPTY] = False
 
     # ...and retaking ko is always illegal
     if ko is not None:
-        legal_moves[ko] = 0
+        legal_moves[ko] = False
     # Concat with pass move
-    return np.arange(BOARD_SIZE**2 + 1)[
-        np.concatenate([legal_moves.ravel(), [1]]).astype(bool)
-    ]  # Make better
-
-
-def pass_move(state, mutate: bool = False):
-    pos = state if mutate else copy.deepcopy(state)
-    pos.recent += (PlayerMove(pos.to_play, PASS_MOVE),)
-    pos.board_deltas = np.concatenate(
-        (np.zeros([1, BOARD_SIZE, BOARD_SIZE], dtype=np.int8), pos.board_deltas[:6])
-    )
-    pos.to_play *= -1
-    pos.ko = None
-    return pos
+    return np.arange(BOARD_SIZE**2 + 1)[legal_moves.ravel().tolist() + [1]]
 
 
 def play_move(state, move: int, color=None, mutate=False):
@@ -225,20 +178,12 @@ def play_move(state, move: int, color=None, mutate=False):
     else:
         new_ko = None
 
-    if pos.to_play == BLACK:
-        new_caps = (pos.caps[0] + len(captured_stones), pos.caps[1])
-    else:
-        new_caps = (pos.caps[0], pos.caps[1] + len(captured_stones))
-
-    pos.caps = new_caps
     pos.ko = new_ko
-    pos.recent += (PlayerMove(color, move),)
+    pos.recent_moves += (PlayerMove(color, move),)
 
     # keep a rolling history of last 7 deltas - that's all we'll need to
     # extract the last 8 board states.
-    pos.board_deltas = np.concatenate(
-        (new_board_delta.reshape(1, BOARD_SIZE, BOARD_SIZE), pos.board_deltas[:6])
-    )
+    pos.board_deltas = [new_board_delta.reshape(1, BOARD_SIZE, BOARD_SIZE)] + pos.board_deltas[:6]
     pos.to_play *= -1
     return pos
 
@@ -248,9 +193,9 @@ def game_over(recent: Tuple[PlayerMove, ...]) -> bool:
 
 
 def score(board: np.ndarray, komi: float) -> float:
-    """Return score from B perspective.
+    """Return score from Black's perspective.
 
-    If W is winning, score is negative.
+    If White is winning, score is negative.
     """
     working_board = np.copy(board)
     while EMPTY in working_board:

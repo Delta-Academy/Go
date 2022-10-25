@@ -1,4 +1,5 @@
 import copy
+from typing import Optional, Set, Dict
 
 import numpy as np
 
@@ -6,19 +7,18 @@ from go_base import (
     BLACK,
     BOARD_SIZE,
     EMPTY,
-    FILL,
-    MISSING_GROUP_ID,
     NEIGHBORS,
     WHITE,
     Group,
     find_reached,
     place_stones,
 )
+from utils import FILL, MISSING_GROUP_ID
 
 
 class LibertyTracker:
     @staticmethod
-    def from_board(board):
+    def from_board(board: np.ndarray) -> "LibertyTracker":
         board = np.copy(board)
         curr_group_id = 0
         lib_tracker = LibertyTracker()
@@ -46,7 +46,7 @@ class LibertyTracker:
 
         return lib_tracker
 
-    def __init__(self, group_index=None, groups=None, liberty_cache=None, max_group_id=1):
+    def __init__(self, group_index: Optional[np.ndarray] = None, groups: Optional[Dict] = None, liberty_cache: Optional[np.ndarray] = None, max_group_id: int = 1):
         # group_index: a NxN numpy array of group_ids. -1 means no group
         # groups: a dict of group_id to groups
         # liberty_cache: a NxN numpy array of liberty counts
@@ -63,7 +63,7 @@ class LibertyTracker:
         )
         self.max_group_id = max_group_id
 
-    def __deepcopy__(self, memodict):
+    def __deepcopy__(self):
         new_group_index = np.copy(self.group_index)
         new_lib_cache = np.copy(self.liberty_cache)
         # shallow copy
@@ -139,7 +139,9 @@ class LibertyTracker:
             self.liberty_cache[s] = 0
         return dead_group.stones
 
-    def _update_liberties(self, group_id, add=set(), remove=set()):
+    def _update_liberties(self, group_id, add: Optional[Set] = None, remove: Optional[Set] = None):
+        add = add or set()
+        remove = remove or set()
         group = self.groups[group_id]
         new_libs = (group.liberties | add) - remove
         self.groups[group_id] = Group(group_id, group.stones, new_libs, group.color)
