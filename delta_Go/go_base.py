@@ -24,7 +24,7 @@
 import copy
 from collections import namedtuple
 from dataclasses import dataclass
-from typing import Iterable, Optional, Set, Tuple
+from typing import Iterable, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -122,15 +122,15 @@ class Group:
     liberties: frozenset
     color: int
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Group):
-            # raise NotImplementedError("Can only compare Group to Group")
-            return NotImplemented
-
+    def __eq__(self, other: object) -> Union[bool, NotImplemented]:
         return (
-            self.stones == other.stones
-            and self.liberties == other.liberties
-            and self.color == other.color
+            (
+                self.stones == other.stones
+                and self.liberties == other.liberties
+                and self.color == other.color
+            )
+            if isinstance(other, Group)
+            else NotImplemented
         )
 
 
