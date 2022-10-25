@@ -3,7 +3,13 @@ from pathlib import Path
 
 import numpy as np
 
-from delta_Go.game_mechanics import BOARD_SIZE, GoEnv, choose_move_pass, transition_function
+from delta_Go.game_mechanics import (
+    BOARD_SIZE,
+    PASS_MOVE,
+    GoEnv,
+    choose_move_pass,
+    transition_function,
+)
 
 
 def test_transition_function_takes_move():
@@ -12,15 +18,6 @@ def test_transition_function_takes_move():
 
     new_state = transition_function(env.state, action=0)
     assert not np.array_equal(env.state.board, new_state.board)
-
-
-def choose_move_not_top_left(legal_moves, **kwargs):
-    legal_moves = legal_moves[legal_moves != 0]
-
-    if len(legal_moves) > 1:  # Don't pass if you don't have to
-        legal_moves = legal_moves[legal_moves != BOARD_SIZE**2]
-
-    return random.choice(legal_moves)
 
 
 def test_transition_function_correct_move():
@@ -46,5 +43,17 @@ def test_transition_function_correct_move():
     np.testing.assert_array_equal(env.state.board, new_board)
 
 
-# if __name__ == "main":
-#     test_transition_function_correct_move()
+def test_transition_function_no_in_place_mutation():
+
+    state, _, _, _ = GoEnv(choose_move_pass).reset()  # Will leave a new game board after reset
+    while not state.is_game_over():
+        action = random.choice(state.legal_moves)
+        new_state = transition_function(state, action=action)
+        if action != PASS_MOVE:
+            assert not np.array_equal(new_state.board, state.board)
+        state = new_state
+
+
+def test_transition_function_no_in_place_mutation_10_times() -> None:
+    for _ in range(10):
+        test_transition_function_no_in_place_mutation()

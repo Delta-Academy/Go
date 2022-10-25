@@ -33,6 +33,8 @@ import coords
 
 BOARD_SIZE = 9
 
+ALLOW_SUICIDE = True
+
 # Represent a board as a numpy array, with 0 empty, 1 is black, -1 is white.
 # This means that swapping colors is as simple as multiplying array by -1.
 WHITE, EMPTY, BLACK, FILL, KO, UNKNOWN = range(-1, 5)
@@ -254,8 +256,7 @@ class LibertyTracker:
 
         self._handle_captures(captured_stones)
 
-        # suicide is illegal
-        if len(self.groups[new_group.id].liberties) == 0:
+        if not ALLOW_SUICIDE and len(self.groups[new_group.id].liberties) == 0:
             raise IllegalMove(f"Move at {c} would commit suicide!\n")
 
         return captured_stones
@@ -367,49 +368,6 @@ class Position:
             player_color=self.player_color,
         )
 
-    def __str__(self, colors=True):
-        if colors:
-            pretty_print_map = {
-                WHITE: "\x1b[0;31;47mO",
-                EMPTY: "\x1b[0;31;43m.",
-                BLACK: "\x1b[0;31;40mX",
-                FILL: "#",
-                KO: "*",
-            }
-        else:
-            pretty_print_map = {
-                WHITE: "O",
-                EMPTY: ".",
-                BLACK: "X",
-                FILL: "#",
-                KO: "*",
-            }
-        board = np.copy(self.board)
-        captures = self.caps
-        if self.ko is not None:
-            place_stones(board, KO, [self.ko])
-        raw_board_contents = []
-        for i in range(BOARD_SIZE):
-            row = [" "]
-            for j in range(BOARD_SIZE):
-                appended = "<" if (self.recent and (i, j) == self.recent[-1].move) else " "
-                row.append(pretty_print_map[board[i, j]] + appended)
-                if colors:
-                    row.append("\x1b[0m")
-
-            raw_board_contents.append("".join(row))
-
-        row_labels = ["%2d" % i for i in range(BOARD_SIZE, 0, -1)]
-        annotated_board_contents = [
-            "".join(r) for r in zip(row_labels, raw_board_contents, row_labels)
-        ]
-        header_footer_rows = ["   " + " ".join("ABCDEFGHJKLMNOPQRST"[:BOARD_SIZE]) + "   "]
-        annotated_board = "\n".join(
-            itertools.chain(header_footer_rows, annotated_board_contents, header_footer_rows)
-        )
-        details = "\nMove: {}. Captures X: {} O: {}\n".format(self.n, *captures)
-        return annotated_board + details
-
     def is_move_suicidal(self, move):
         potential_libs = set()
         for n in NEIGHBORS[move]:
@@ -436,8 +394,9 @@ class Position:
             return False
         if move == self.ko:
             return False
-        if self.is_move_suicidal(move):
-            return False
+        if not ALLOW_SUICIDE:
+            if self.is_move_suicidal(move):
+                return False
 
         return True
 
@@ -458,9 +417,10 @@ class Position:
         surrounded_spots = np.multiply((self.board == EMPTY), (num_adjacent_stones == 4))
         # Such spots are possibly illegal, unless they are capturing something.
         # Iterate over and manually check each spot.
-        for coord in np.transpose(np.nonzero(surrounded_spots)):
-            if self.is_move_suicidal(tuple(coord)):
-                legal_moves[tuple(coord)] = 0
+        if not ALLOW_SUICIDE:
+            for coord in np.transpose(np.nonzero(surrounded_spots)):
+                if self.is_move_suicidal(tuple(coord)):
+                    legal_moves[tuple(coord)] = 0
 
         # ...and retaking ko is always illegal
         if self.ko is not None:
@@ -505,11 +465,7 @@ class Position:
 
         if not self.is_move_legal(c):
             raise IllegalMove(
-                "{} move at {} is illegal: \n{}".format(
-                    "Black" if self.to_play == BLACK else "White",
-                    coords.to_gtp(c),
-                    self,
-                )
+                f'{"Black" if self.to_play == BLACK else "White"} move at {coords.to_gtp(c)} is illegal: \n{self}'
             )
 
         potential_ko = is_koish(self.board, c)
