@@ -52,14 +52,14 @@ def transition_function(state: State, action: int) -> State:
 
 
 def reward_function(state: State) -> int:
-    if not game_over(state.recent):
+    if not game_over(state.recent_moves):
         return 0
     result_ = result(state.board, KOMI)
     return result_ if state.player_color == BLACK else result_ * -1
 
 
 def is_terminal(state: State) -> bool:
-    return game_over(state.recent)
+    return game_over(state.recent_moves)
 
 
 def play_go(

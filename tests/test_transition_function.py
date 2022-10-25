@@ -47,7 +47,7 @@ def test_transition_function_correct_move():
 def test_transition_function_no_in_place_mutation() -> None:
 
     state, _, _, _ = GoEnv(choose_move_pass).reset()  # Will leave a new game board after reset
-    while not game_over(state.recent):
+    while not game_over(state.recent_moves):
         action = random.choice(all_legal_moves(state.board, state.ko))
 
         new_state = transition_function(state, action=action)
