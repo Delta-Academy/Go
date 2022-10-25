@@ -14,7 +14,17 @@ from gym.spaces import Box, Discrete
 from pygame import Surface
 from torch import nn
 
-from go_base import BLACK, BOARD_SIZE, WHITE, Position
+from go_base import (
+    BLACK,
+    BOARD_SIZE,
+    WHITE,
+    State,
+    all_legal_moves,
+    game_over,
+    is_move_legal,
+    play_move,
+    result,
+)
 
 HERE = Path(__file__).parent.resolve()
 
@@ -35,24 +45,25 @@ PASS_MOVE = BOARD_SIZE**2
 KOMI = 7.5
 
 
-def int_to_coord(move: int) -> Tuple[int, int]:
-    return (move // BOARD_SIZE, move % BOARD_SIZE)
+def int_to_coord(move: int) -> Optional[Tuple[int, int]]:
+    return None if move == PASS_MOVE else (move // BOARD_SIZE, move % BOARD_SIZE)
 
 
-def transition_function(state: Position, action: int) -> Position:
+def transition_function(state: State, action: int) -> State:
     coord = None if action == BOARD_SIZE**2 else int_to_coord(action)
-    return state.play_move(coord)
+
+    return play_move(state, coord, state.to_play)
 
 
-def reward_function(state: Position) -> int:
-    if not state.is_game_over():
+def reward_function(state: State) -> int:
+    if not game_over(state.recent):
         return 0
-    result = state.result()
-    return result if state.player_color == BLACK else result * -1
+    result_ = result(state.board, KOMI)
+    return result_ if state.player_color == BLACK else result_ * -1
 
 
-def is_terminal(state: Position) -> bool:
-    return state.is_game_over()
+def is_terminal(state: State) -> bool:
+    return game_over(state.recent)
 
 
 def play_go(
@@ -101,7 +112,7 @@ class GoEnv:
 
         # Which color do we play as
 
-        self.state = Position()
+        self.state = State()
 
     def render_game(self, screen: Optional[Surface] = None) -> None:
         # TODO: copy from pettingzoo
@@ -115,11 +126,11 @@ class GoEnv:
     def done(self) -> bool:
         return is_terminal(self.state)
 
-    def reset(self) -> Tuple[Position, float, bool, Dict]:
+    def reset(self) -> Tuple[State, float, bool, Dict]:
 
         # 1 is black and goes first, white is -1 and goes second
         self.player_color = random.choice([BLACK, WHITE])
-        self.state = Position(player_color=self.player_color)
+        self.state = State(player_color=self.player_color)
 
         if self.verbose:
             print(
@@ -145,14 +156,16 @@ class GoEnv:
     def _step(self, move: int) -> None:
 
         assert not self.done, "Game is done! Please reset() the env before calling step() again"
-        assert move in self.state.legal_moves, f"{move} is an illegal move"
+        assert is_move_legal(
+            int_to_coord(move), self.state.board, self.state.ko
+        ), f"{move} is an illegal move"
 
         self.state = transition_function(self.state, move)
 
         if self.render:
             self.render_game()
 
-    def step(self, move: int) -> Tuple[Position, int, bool, Dict]:
+    def step(self, move: int) -> Tuple[State, int, bool, Dict]:
 
         assert self.state.to_play == self.player_color
         self._step(move)
@@ -181,11 +194,11 @@ class GoEnv:
         # )
 
 
-def choose_move_randomly(state: Position) -> int:
-    return random.choice(state.legal_moves)
+def choose_move_randomly(state: State) -> int:
+    return random.choice(all_legal_moves(state.board, state.ko))
 
 
-def choose_move_pass(state: Position) -> int:
+def choose_move_pass(state: State) -> int:
     """Always pass."""
     return PASS_MOVE
 
