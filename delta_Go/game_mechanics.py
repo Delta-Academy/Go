@@ -79,7 +79,6 @@ def play_go(
 
     state, reward, done, info = env.reset()
     done = False
-    # REMOVE ME
     while not done:
         action = your_choose_move(state=state)
         state, reward, done, info = env.step(action)
