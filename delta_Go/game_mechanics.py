@@ -1,30 +1,29 @@
 import pickle
 import random
 import sys
-import time
-from copy import copy, deepcopy
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
+
 import pygame
 import torch
-from gym.spaces import Box, Discrete
-from pygame import Surface
-from torch import nn
-
 from go_base import (
     BLACK,
     BOARD_SIZE,
+    PASS_MOVE,
     WHITE,
     all_legal_moves,
     game_over,
+    int_to_coord,
     is_move_legal,
     play_move,
     result,
 )
+from gym.spaces import Box, Discrete
+from pygame import Surface
 from state import State
+from torch import nn
 
 HERE = Path(__file__).parent.resolve()
 
@@ -33,7 +32,6 @@ sys.path.append(str(HERE / "PettingZoo"))
 
 
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
-PASS_MOVE = BOARD_SIZE**2
 
 
 # The komi to use is much debated. 7.5 seems to
@@ -45,14 +43,8 @@ PASS_MOVE = BOARD_SIZE**2
 KOMI = 7.5
 
 
-def int_to_coord(move: int) -> Optional[Tuple[int, int]]:
-    return None if move == PASS_MOVE else (move // BOARD_SIZE, move % BOARD_SIZE)
-
-
 def transition_function(state: State, action: int) -> State:
-    coord = None if action == BOARD_SIZE**2 else int_to_coord(action)
-
-    return play_move(state, coord, state.to_play)
+    return play_move(state, action, state.to_play)
 
 
 def reward_function(state: State) -> int:
