@@ -8,7 +8,7 @@ Go is a two player board game. The aim is to capture territory from your opponen
 
 The rules of Go are complex and many different rule-sets exist. [Wikipedia](https://en.wikipedia.org/wiki/Rules_of_Go) has a good description of the rules so we won't rehash them here.
 
-The rule-set we will use here are the [CGOS](http://www.yss-aya.com/cgos/) rules that allow two bots to play each other (as other forms of Go rely on agreements between human players).
+The rule-set we will use here are the [CGOS](http://www.yss-aya.com/cgos/) rules that allow two bots to play each other (as other forms of Go rely on agreements between human players). One amendment to the CGOS rules is that instead of 'Positional SuperKo', we only check for simple Ko.
 
 Professional go is played on a 19x19 board, but we will use a 9x9 board so you don't need your own GPU farm :pig:!
 
