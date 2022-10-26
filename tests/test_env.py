@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 
-from delta_Go.game_mechanics import (
+from delta_go.game_mechanics import (
     BLACK,
     BOARD_SIZE,
     KOMI,
@@ -11,8 +11,8 @@ from delta_Go.game_mechanics import (
     choose_move_randomly,
     play_go,
 )
-from delta_Go.go_base import all_legal_moves, score
-from delta_Go.state import State
+from delta_go.go_base import all_legal_moves, score
+from delta_go.state import State
 
 PASS_MOVE = BOARD_SIZE**2
 
