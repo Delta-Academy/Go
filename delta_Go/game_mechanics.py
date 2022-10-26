@@ -47,6 +47,12 @@ SCREEN_SIZE = (500, 500)
 KOMI = 7.5
 
 
+def choose_move_randomly(state: State) -> int:
+    """Finds all available legal moves and chooses one at random."""
+    legal_moves = all_legal_moves(state.board, state.ko)
+    return random.choice(legal_moves)
+
+
 def transition_function(state: State, action: int) -> State:
     return play_move(state, action, state.to_play)
 
@@ -83,10 +89,6 @@ def play_go(
         action = your_choose_move(state=state)
         state, reward, done, info = env.step(action)
     return reward
-
-
-# TODO: Currently state.board is just relative to the colors (BLACK = 1, WHITE = -1)
-# Need to think about whether to change before giving to choose_moves
 
 
 class GoEnv:
@@ -195,10 +197,6 @@ class GoEnv:
             f"White has {np.sum(self.state.board==-1)} counters.\n"
             f"Your score is {score(self.state.board, KOMI)}.\n"
         )
-
-
-def choose_move_randomly(state: State) -> int:
-    return random.choice(all_legal_moves(state.board, state.ko))
 
 
 def choose_move_pass(state: State) -> int:

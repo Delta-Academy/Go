@@ -32,8 +32,9 @@ The score also includes a [Komi](<https://en.wikipedia.org/wiki/Go_(game)#Komi>)
 
 2. You can only write code in `main.py`
 
+   - Your choose_move function will have a limit of 1 second to run!
    - You can only store data to be used in a competition in a `.pkl` file by `save_file()`.
-   - You can pkl anything you want, even a dictionary of pytorch networks! Just make sure your choose_move can read it.
+   - You can pkl anything you want, even a dictionary of pytorch networks (or nothing)! Just make sure your choose_move can read it.
    - In the competition, your agent will call the `choose_move()` function in `main.py` to select a move (`choose_move()` may call other functions in `main.py`)
    - Any code not in `main.py` will not be used.
 
@@ -51,12 +52,11 @@ The competition & discussion will be in [Gather Town](https://app.gather.town/ap
 
 ### Rewards :moneybag:
 
-
-| Reward |            |
-|-------|------------
-| `+1`  | You win    |
-| `-1`  | You lose   |
-| `0`   | Otherwise  |
+| Reward |           |
+| ------ | --------- |
+| `+1`   | You win   |
+| `-1`   | You lose  |
+| `0`    | Otherwise |
 
 (A draw is not possible as the Komi is 7.5)
 
@@ -76,7 +76,7 @@ Valid actions are integers in the range `0-81` (inclusive). Each position on the
 
 The integer `81` is the pass action. Two consecutive passes ends the game. If you do not return this action the game may never end!
 
-## Functions you write :point_left:
+## Code you write :point_left:
 
 <details>
 <summary><code style="white-space:nowrap;">  train()</code></summary>
@@ -86,17 +86,18 @@ Write this to train your algorithm from experience in the environment.
 <br />
 (Optional) Returns a pickelable object for your choose_move to use
 </details>
+
 <details>
 <summary><code style="white-space:nowrap;">  choose_move()</code></summary>
 This acts greedily given the state and network.
 
-In the competition, the choose_move() function is called to make your next move. Takes the state as input and outputs an action.
+In the competition, the choose_move() function is called to make your next move. Takes inputs of `state`, `pkl_file` and `mcts` (see below).
 
-The state defined by two variables.
+</details>
 
-- `observation` a (board size x board size) numpy array as defined above.
-- `legal_moves` a numpy array of integers containing all the legal moves on that turn
-
+<details>
+<summary><code style="white-space:nowrap;">  MCTS()</code></summary>
+The skeleton of a class that you can use to implement mcts. Use this to persist your mcts tree between steps so it can be pruned.
 </details>
 
 ## Existing Code :pray:
@@ -146,15 +147,15 @@ Inputs:
 
 </details>
 
-
 <details>
-<summary><code style="white-space:nowrap;">State</code></summary>
+<summary><code style="white-space:nowrap;"> State</code></summary>
 
 This is a big dataclass. Hold onto your hats.
 
-However there are only 3 important attributes you *need* to know about:
+However there are only 3 important attributes you _need_ to know about:
 
 - `board`: a (board size x board size) numpy array containing the board state. The board is represented as follows:
+
   - `-1` = white stone
   - `0` = empty
   - `1` = black stone
@@ -164,12 +165,11 @@ However there are only 3 important attributes you *need* to know about:
 
 - `to_play`: signifies whose turn it is to play at the current state. Either `BLACK` or `WHITE`.
 
-- `player_color`: the color of the player **you** are controlling. Either `BLACK` or `WHITE`.
+- `player_color`: the color of the player **you** are controlling. Either `1` (black) or `-1` (white).
 
 The other attributes are explained in the docstring, although can be ignored (unless building a pro-level Go AI).
 
 </details>
-
 
 <details>
 <summary><code style="white-space:nowrap;">  int_to_coord()</code></summary>
@@ -177,7 +177,6 @@ The other attributes are explained in the docstring, although can be ignored (un
 A function that converts from an integer to a coordinate tuple (or None, if the pass move).
 
 </details>
-
 
 <details>
 <summary><code style="white-space:nowrap;">  PlayerMove</code></summary>
@@ -189,8 +188,8 @@ It has 2 attributes:
 <code style="white-space:nowrap;">color</code>: either <code style="white-space:nowrap;"> WHITE</code> or <code style="white-space:nowrap;">BLACK</code>
 
 <code style="white-space:nowrap;"> move</code>: the move made by the player. This is either an integer in the range <code style="white-space:nowrap;">0-81</code> (inclusive) or <code style="white-space:nowrap;">None</code> if the player passes.
-</details>
 
+</details>
 
 <details>
 <summary><code style="white-space:nowrap;">  reward_function()</code></summary>
@@ -199,14 +198,12 @@ Gives the reward relative to the `State.player_color`. I.e. if you are black and
 
 </details>
 
-
 <details>
 <summary><code style="white-space:nowrap;">  transition_funcion()</code></summary>
 
 Gives the successor `State` object given the current `State` and the action `int` made by the player whose turn it is to play.
 
 </details>
-
 
 <details>
 <summary><code style="white-space:nowrap;">is_terminal()</code></summary>
