@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import numpy as np
-import pygame
 
+import pygame
 from go_base import BLACK, BOARD_SIZE, WHITE
 
 HERE = Path(__file__).parent.resolve()

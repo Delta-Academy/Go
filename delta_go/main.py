@@ -1,8 +1,8 @@
 from typing import Any, Dict, Optional
 
 import numpy as np
-import torch
 
+import torch
 from check_submission import check_submission
 from game_mechanics import choose_move_randomly, human_player, load_pkl, play_go, save_pkl
 from go_base import all_legal_moves
