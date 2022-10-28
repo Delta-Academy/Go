@@ -3,14 +3,14 @@ from pathlib import Path
 
 import numpy as np
 
-from delta_Go.game_mechanics import (
+from delta_go.game_mechanics import (
     BOARD_SIZE,
     PASS_MOVE,
     GoEnv,
     choose_move_pass,
     transition_function,
 )
-from delta_Go.go_base import all_legal_moves, game_over
+from delta_go.go_base import all_legal_moves, game_over
 
 
 def test_transition_function_takes_move():

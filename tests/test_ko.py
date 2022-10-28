@@ -1,4 +1,4 @@
-from delta_Go.game_mechanics import GoEnv, choose_move_pass, transition_function
+from delta_go.game_mechanics import GoEnv, choose_move_pass, transition_function
 
 
 def test_ko() -> None:

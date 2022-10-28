@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Set, Tuple, Type, Union
 
 import numpy as np
-from torch import nn
 
 from game_mechanics import BOARD_SIZE, GoEnv, choose_move_randomly, load_pkl
+from torch import nn
 
 
 def check_submission(team_name: str, choose_move_no_network: Callable) -> None:
