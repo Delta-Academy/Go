@@ -195,7 +195,7 @@ class GoEnv:
             f"Player was playing as {self.color_str}\n"
             f"Black has {np.sum(self.state.board==1)} counters.\n"
             f"White has {np.sum(self.state.board==-1)} counters.\n"
-            f"Your score is {score(self.state.board, KOMI)}.\n"
+            f"Black's score is {score(self.state.board, KOMI)}.\n"
         )
 
 

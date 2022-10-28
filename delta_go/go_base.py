@@ -211,10 +211,12 @@ def game_over(recent: Tuple[PlayerMove, ...]) -> bool:
     return len(recent) >= 2 and recent[-1].move == PASS_MOVE and recent[-2].move == PASS_MOVE
 
 
-def score(board: np.ndarray, komi: float) -> float:
+def score(board: np.ndarray, komi: float, return_both_colors: bool = False) -> Union[float, Tuple]:
     """Return score from Black's perspective.
 
     If White is winning, score is negative.
+    return_both_colors: set to true to return a tuple of (black_score, white_score)
+                        rather than white score = -black_score
     """
     working_board = np.copy(board)
     while EMPTY in working_board:
@@ -232,13 +234,19 @@ def score(board: np.ndarray, komi: float) -> float:
             territory_color = UNKNOWN  # dame, or seki
         place_stones(working_board, territory_color, territory)
 
+    if return_both_colors:
+        return (
+            np.count_nonzero(working_board == BLACK) - komi,
+            np.count_nonzero(working_board == WHITE),
+        )
     return (
         np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - komi
     )
 
 
 def result(board: np.ndarray, komi: float) -> int:
-    score_ = score(board, komi)
+    score_ = score(board, komi, return_both_colors=False)
+    assert isinstance(score_, float)  # Make sure you haven't got the tuple
     if score_ > 0:
         return 1
     elif score_ < 0:
