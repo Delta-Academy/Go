@@ -5,12 +5,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
+
 import pygame
 import torch
-from gym.spaces import Box, Discrete
-from pygame import Surface
-from torch import nn
-
 from go_base import (
     BLACK,
     BOARD_SIZE,
@@ -24,8 +21,11 @@ from go_base import (
     result,
     score,
 )
+from gym.spaces import Box, Discrete
+from pygame import Surface
 from render import render_game
 from state import State
+from torch import nn
 
 HERE = Path(__file__).parent.resolve()
 
@@ -195,7 +195,7 @@ class GoEnv:
             f"Player was playing as {self.color_str}\n"
             f"Black has {np.sum(self.state.board==1)} counters.\n"
             f"White has {np.sum(self.state.board==-1)} counters.\n"
-            f"Your score is {score(self.state.board, KOMI)}.\n"
+            f"Black's score is {score(self.state.board, KOMI)}.\n"
         )
 
 
