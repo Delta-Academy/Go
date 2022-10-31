@@ -16,9 +16,8 @@ from torch import nn
 def check_submission(team_name: str, choose_move_no_network: Callable) -> None:
     example_state, _, _, info = GoEnv(choose_move_randomly).reset()
     expected_choose_move_return_type = (int, np.int64)
-    game_mechanics_expected_hash = (
-        "c888eaf4e6c970fee4d89bd35cd64b14c33a6ea87bef6fac4fce76da92be7fe1"
-    )
+    # Not implemented here
+    game_mechanics_expected_hash = ""
     expected_pkl_output_type = Any
     pkl_file = load_pkl(team_name)
 
