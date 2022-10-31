@@ -43,8 +43,6 @@ from utils import (
     int_to_coord,
 )
 
-# from state import State
-
 
 class PositionWithContext(namedtuple("SgfPosition", ["position", "next_move", "result"])):
     pass
