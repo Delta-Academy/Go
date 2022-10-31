@@ -72,9 +72,6 @@ if __name__ == "__main__":
         """
         return choose_move(state, my_pkl_file, mcts=my_mcts)
 
-    # Currently the check submission will fail because we are passing the env to
-    # choose_move. We shouldn't do this going forward so am not going to worry
-    # about fixing.
     check_submission(
         TEAM_NAME, choose_move_no_network
     )  # <---- Make sure I pass! Or your solution will not work in the tournament!!
