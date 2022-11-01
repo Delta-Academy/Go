@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 
@@ -10,9 +9,11 @@ BOARD_SIZE = 9
 WHITE, EMPTY, BLACK, FILL, _, UNKNOWN = range(-1, 5)
 
 
-@dataclass
-class PlayerMove:
-    """A simple class representing a move made by a player.
+class PlayerMove(NamedTuple):
+    """A hashable class representing a move made by a player.
+    Can be used as a dictionary key.
+    I.e the following is valid:
+        d: Dict[PlayerMove, int] = {PlayerMove(color=1, move=2): 100}
 
     Args:
         color: BLACK or WHITE
@@ -21,9 +22,6 @@ class PlayerMove:
 
     color: int
     move: int
-
-    def __hash__(self) -> int:
-        return hash((self.color, self.move))
 
 
 # Represents "group not found" in the LibertyTracker object
