@@ -18,7 +18,13 @@ def get_image(image_name: str) -> pygame.surface.Surface:
     return surface
 
 
-def render_game(board: np.ndarray, screen: pygame.surface.Surface) -> None:
+def render_game(
+    board: np.ndarray, screen: pygame.surface.Surface, update_display: bool = True
+) -> None:
+    """Render the board to the screen.
+
+    If running from delta_live_tournaments then set update_display to False
+    """
 
     screen_width = screen.get_width()
 
@@ -84,4 +90,5 @@ def render_game(board: np.ndarray, screen: pygame.surface.Surface) -> None:
                 )
 
     # If the tournament flashed it's this
-    pygame.display.update()
+    if update_display:
+        pygame.display.update()
