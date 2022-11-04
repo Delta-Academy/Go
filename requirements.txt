@@ -1,6 +1,5 @@
-
 numpy
 pygame
 tqdm
-delta-utils
+delta-utils>=0.0.14
 gym

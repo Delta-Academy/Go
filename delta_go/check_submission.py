@@ -16,8 +16,6 @@ from torch import nn
 def check_submission(team_name: str, choose_move_no_network: Callable) -> None:
     example_state, _, _, info = GoEnv(choose_move_randomly).reset()
     expected_choose_move_return_type = (int, np.int64)
-    # Not implemented here
-    game_mechanics_expected_hash = ""
     expected_pkl_output_type = Any
     pkl_file = load_pkl(team_name)
 
@@ -35,7 +33,6 @@ def check_submission(team_name: str, choose_move_no_network: Callable) -> None:
         expected_pkl_type=None,
         pkl_file=pkl_file,
         pkl_checker_function=lambda x: x,
-        game_mechanics_hash=game_mechanics_expected_hash,
         current_folder=Path(__file__).parent.resolve(),
         choose_move_extra_argument={"legal_moves": np.arange(BOARD_SIZE**2 + 1)},
     )
@@ -65,7 +62,6 @@ def get_local_imports(folder_path) -> Set:
 def _check_submission(
     example_state: Any,
     expected_choose_move_return_type: Union[Type, Tuple[Type, ...]],
-    game_mechanics_hash: str,
     current_folder: Path,
     pkl_file: Optional[Any] = None,
     expected_pkl_type: Optional[Type] = None,
