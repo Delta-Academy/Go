@@ -90,6 +90,12 @@ class LibertyTracker:
             else:
                 empty_neighbors.add(n)
 
+        # handle suicides
+        is_suicide = not empty_neighbors and (
+            not friendly_neighboring_group_ids
+            or all(len(self.groups[fr].liberties) == 1 for fr in friendly_neighboring_group_ids)
+        )
+
         new_group = self._merge_from_played(
             color, c, empty_neighbors, friendly_neighboring_group_ids
         )
@@ -103,6 +109,9 @@ class LibertyTracker:
                 captured_stones.update(captured)
             else:
                 self._update_liberties(group_id, remove={c})
+
+        if not captured_stones and is_suicide:
+            captured_stones = self._capture_group(new_group.id)
 
         self._handle_captures(captured_stones)
 
