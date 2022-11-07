@@ -34,6 +34,7 @@ from utils import (
     BOARD_SIZE,
     DIAGONALS,
     EMPTY,
+    MAX_NUM_MOVES,
     NEIGHBORS,
     PASS_MOVE,
     UNKNOWN,
@@ -206,7 +207,9 @@ def play_move(state, move: int, color=None, mutate=False):
 
 
 def game_over(recent: Tuple[PlayerMove, ...]) -> bool:
-    return len(recent) >= 2 and recent[-1].move == PASS_MOVE and recent[-2].move == PASS_MOVE
+    two_passes = len(recent) >= 2 and recent[-1].move == PASS_MOVE and recent[-2].move == PASS_MOVE
+    turn_limit_reached = len(recent) >= MAX_NUM_MOVES
+    return two_passes or turn_limit_reached
 
 
 def score(board: np.ndarray, komi: float, return_both_colors: bool = False) -> Union[float, Tuple]:
