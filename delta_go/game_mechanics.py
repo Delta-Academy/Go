@@ -1,13 +1,11 @@
 import pickle
 import random
-import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Tuple
 
 import numpy as np
 
 import pygame
-import torch
 from go_base import (
     BLACK,
     BOARD_SIZE,
@@ -21,16 +19,11 @@ from go_base import (
     result,
     score,
 )
-from gym.spaces import Box, Discrete
-from pygame import Surface
 from render import render_game
 from state import State
 from torch import nn
 
 HERE = Path(__file__).parent.resolve()
-
-# Hack as this won't pip install on replit
-sys.path.append(str(HERE / "PettingZoo"))
 
 
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
@@ -85,10 +78,6 @@ def play_go(
     return reward
 
 
-# TODO: Currently state.board is just relative to the colors (BLACK = 1, WHITE = -1)
-# Need to think about whether to change before giving to choose_moves
-
-
 class GoEnv:
     def __init__(
         self,
@@ -129,10 +118,10 @@ class GoEnv:
     def done(self) -> bool:
         return is_terminal(self.state)
 
-    def reset(self) -> Tuple[State, float, bool, Dict]:
+    def reset(self, player_black: bool = False) -> Tuple[State, float, bool, Dict]:
 
         # 1 is black and goes first, white is -1 and goes second
-        self.player_color = random.choice([BLACK, WHITE])
+        self.player_color = BLACK if player_black else random.choice([BLACK, WHITE])
         self.color_str = "Black" if self.player_color == BLACK else "White"
 
         self.state = State(player_color=self.player_color)
@@ -198,7 +187,8 @@ class GoEnv:
 
 
 def choose_move_randomly(state: State) -> int:
-    return random.choice(all_legal_moves(state.board, state.ko))
+    legal_moves = all_legal_moves(state.board, state.ko)
+    return legal_moves[int(random.random() * len(legal_moves))]
 
 
 def choose_move_pass(state: State) -> int:
