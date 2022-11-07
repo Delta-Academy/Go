@@ -26,7 +26,7 @@ class State:
                     Gives a speedup of 5x!
     """
 
-    board: np.ndarray = EMPTY_BOARD
+    board: Optional[np.ndarray] = None
     recent_moves: Tuple[PlayerMove, ...] = tuple()
     to_play: int = BLACK
     player_color: int = BLACK
@@ -51,3 +51,4 @@ class State:
     def __post_init__(self):
         if self.board_deltas is None:
             self.board_deltas = []
+        self.board = np.copy(EMPTY_BOARD) if self.board is None else self.board
