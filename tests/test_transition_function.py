@@ -1,10 +1,8 @@
 import random
-from pathlib import Path
 
 import numpy as np
 
 from delta_go.game_mechanics import (
-    BOARD_SIZE,
     PASS_MOVE,
     GoEnv,
     choose_move_pass,
@@ -15,7 +13,7 @@ from delta_go.game_mechanics import (
 )
 from delta_go.go_base import all_legal_moves, game_over
 from delta_go.state import State
-from delta_go.utils import MAX_NUM_MOVES
+from delta_go.utils import BOARD_SIZE, MAX_NUM_MOVES
 
 
 def test_transition_function_takes_move():
@@ -27,7 +25,6 @@ def test_transition_function_takes_move():
 
 
 def test_transition_function_correct_move():
-
     env = GoEnv(choose_move_pass)  # Will leave a new game board after reset
     env.reset()
 
@@ -50,14 +47,13 @@ def test_transition_function_correct_move():
 
 
 def test_transition_function_no_in_place_mutation() -> None:
-
+    # Got to be careful of suicide moves! These will leave the board the same!
     state, _, _, _ = GoEnv(choose_move_pass).reset()  # Will leave a new game board after reset
-    while not game_over(state.recent_moves):
-        action = random.choice(all_legal_moves(state.board, state.ko))
 
+    # Place in every location from top left to bottom right, row by row (except last row)
+    for action in range(BOARD_SIZE * (BOARD_SIZE - 1)):
         new_state = transition_function(state, action=action)
-        if action != PASS_MOVE:
-            assert not np.array_equal(new_state.board, state.board)
+        assert not np.array_equal(new_state.board, state.board)
         state = new_state
 
 
