@@ -13,6 +13,7 @@ from delta_go.game_mechanics import (
 )
 from delta_go.go_base import all_legal_moves, score
 from delta_go.state import State
+from delta_go.utils import MAX_NUM_MOVES
 
 PASS_MOVE = BOARD_SIZE**2
 
@@ -21,7 +22,8 @@ def choose_move_pass_at_end(state):
     legal_moves = all_legal_moves(state.board, state.ko)
     if len(legal_moves) < 10:
         return PASS_MOVE
-    return random.choice(legal_moves[legal_moves != BOARD_SIZE**2])
+    non_pass_moves = legal_moves[:-1]
+    return non_pass_moves[int(random.random()) * len(non_pass_moves)]
 
 
 def test_play_go():
@@ -75,9 +77,8 @@ def test_env__step() -> None:
 
 
 def choose_move_top_left(state: State) -> int:
-
     legal_moves = all_legal_moves(state.board, state.ko)
-    return 0 if 0 in legal_moves else random.choice(legal_moves)
+    return 0 if 0 in legal_moves else choose_move_randomly(state)
 
 
 def test_env_step() -> None:
@@ -120,7 +121,6 @@ def test_env_step() -> None:
 
 
 def test_env_game_over() -> None:
-
     env = GoEnv(
         choose_move_randomly,
     )
@@ -129,9 +129,8 @@ def test_env_game_over() -> None:
         action = choose_move_randomly(state=state)
         state, reward, done, info = env.step(action)
 
-    board = state.board * env.player_color
     assert done
-    assert action == PASS_MOVE
+    assert action == PASS_MOVE or len(state.recent_moves) == MAX_NUM_MOVES
 
     # Probably can be refactored but oh well
     score_ = score(state.board, KOMI)
