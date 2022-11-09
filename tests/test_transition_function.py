@@ -8,9 +8,14 @@ from delta_go.game_mechanics import (
     PASS_MOVE,
     GoEnv,
     choose_move_pass,
+    choose_move_randomly,
+    is_terminal,
+    reward_function,
     transition_function,
 )
 from delta_go.go_base import all_legal_moves, game_over
+from delta_go.state import State
+from delta_go.utils import MAX_NUM_MOVES
 
 
 def test_transition_function_takes_move():
@@ -59,3 +64,31 @@ def test_transition_function_no_in_place_mutation() -> None:
 def test_transition_function_no_in_place_mutation_10_times() -> None:
     for _ in range(10):
         test_transition_function_no_in_place_mutation()
+
+
+def ensure_to_play_changes_terminal():
+    state = State()
+    state = transition_function(state, choose_move_randomly(state))  # Black
+    state = transition_function(state, 81)  # White
+    state = transition_function(state, 81)  # Black
+    # Black wins
+    assert is_terminal(state)
+    assert reward_function(state) == 1  # Since player_move is BLACK by default
+    print(state.to_play)
+
+
+def test_max_num_moves_is_terminal():
+    state = State()
+    for _ in range(MAX_NUM_MOVES // 2):
+        # Black plays randomly non-pass moves
+        legal_moves = all_legal_moves(state.board, state.ko)
+        state = transition_function(
+            state, legal_moves[int(random.random() * (len(legal_moves) - 1))]
+        )  # black
+
+        # white - passes unless board about to be full no legal moves
+        legal_moves = all_legal_moves(state.board, state.ko)
+        state = transition_function(state, 81 if len(legal_moves) > 2 else legal_moves[0])
+
+    assert is_terminal(state)
+    assert reward_function(state) != 0
