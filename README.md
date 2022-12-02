@@ -28,7 +28,7 @@ The score also includes a [Komi](<https://en.wikipedia.org/wiki/Go_(game)#Komi>)
 
 # Competition Rules :scroll:
 
-1. You must build an agent to play Go using either a **reinforcement learning** algorithm or a **heuristic search algorithm** (such as monte carlo tree search :deciduous_tree:) or a mix of **both**!
+1. You must build an agent to play Go using either a **reinforcement learning** algorithm or a **planning algorithm** (such as monte carlo tree search :deciduous_tree:) or a mix of **both**!
 
 2. You can only write code in `main.py`
 
