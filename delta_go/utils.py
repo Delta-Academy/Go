@@ -9,7 +9,7 @@ BOARD_SIZE = 9
 WHITE, EMPTY, BLACK, FILL, _, UNKNOWN = range(-1, 5)
 
 
-MAX_NUM_MOVES = 2 * BOARD_SIZE**2
+MAX_NUM_MOVES = 2 * BOARD_SIZE**2 + 2
 
 
 class PlayerMove(NamedTuple):

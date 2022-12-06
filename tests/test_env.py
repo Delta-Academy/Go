@@ -60,6 +60,7 @@ def test_env__step() -> None:
         choose_move_pass,
     )
     state, reward, done, info = env.reset()
+    assert reward == 0
 
     assert state.to_play == env.player_color
 
@@ -133,10 +134,11 @@ def test_env_game_over() -> None:
     assert action == PASS_MOVE or len(state.recent_moves) == MAX_NUM_MOVES
 
     # Probably can be refactored but oh well
+    player_color = env.player_color
     score_ = score(state.board, KOMI)
-    if score_ > 0 and state.player_color == BLACK:
+    if score_ > 0 and player_color == BLACK:
         assert reward == 1
-    elif score_ < 0 and state.player_color == BLACK:
+    elif score_ < 0 and player_color == BLACK:
         assert reward == -1
     elif score_ > 0:
         assert reward == -1

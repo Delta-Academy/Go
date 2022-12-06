@@ -97,10 +97,18 @@ class LibertyTracker:
             else:
                 empty_neighbors.add(n)
 
+        one_move_remaining = np.sum(self.liberty_cache == 0) == 1
+        if not one_move_remaining:
+            board_becomes_full = False
+        else:
+            no_liberties = np.where(self.liberty_cache == 0)
+            board_becomes_full = no_liberties[0] == c[0] and no_liberties[1] == c[1]
+
         # handle suicides
         is_suicide = not empty_neighbors and (
             not friendly_neighboring_group_ids
             or all(len(self.groups[fr].liberties) == 1 for fr in friendly_neighboring_group_ids)
+            and not board_becomes_full
         )
 
         new_group = self._merge_from_played(
@@ -119,7 +127,6 @@ class LibertyTracker:
 
         if not captured_stones and is_suicide:
             captured_stones = self._capture_group(new_group.id)
-
         self._handle_captures(captured_stones)
 
         return captured_stones

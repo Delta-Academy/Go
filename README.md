@@ -175,8 +175,6 @@ However there are only 3 important attributes you _need_ to know about:
 
 - `to_play`: signifies whose turn it is to play at the current state. Either `BLACK` or `WHITE`.
 
-- `player_color`: the color of the player **you** are controlling. Either `1` (black) or `-1` (white).
-
 The other attributes are explained in the docstring, although can be ignored (unless building a pro-level Go AI).
 
 </details>
@@ -203,9 +201,7 @@ It has 2 attributes:
 
 <details>
 <summary><code style="white-space:nowrap;">  reward_function()</code></summary>
-
-Gives the reward relative to the `State.player_color`. I.e. if you are black and white wins, the reward is `-1`.
-
+Gives the reward that would be recieved in the State for the player playing as Black. This reward \* -1 is the reward recieved by the player playing as White. `1` if black wins, `-1` if white wins, `0` otherwise.
 </details>
 
 <details>

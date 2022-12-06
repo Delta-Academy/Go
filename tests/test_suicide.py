@@ -1,6 +1,8 @@
+import numpy as np
+
 from delta_go.game_mechanics import transition_function
 from delta_go.state import State
-from delta_go.utils import BLACK, EMPTY, WHITE
+from delta_go.utils import BLACK, BOARD_SIZE, EMPTY, WHITE
 
 
 def test_top_suicide():
@@ -226,3 +228,17 @@ def test_l_shaped_suicide():
         assert state.board[1, 1] == EMPTY
         assert state.board[1, 2] == EMPTY
         assert state.board[2, 2] == EMPTY
+
+
+def test_full_board_not_suicide() -> None:
+
+    state = State()
+    for black_move in range(81):
+
+        assert state.to_play == BLACK
+        state = transition_function(state, black_move)
+
+        assert state.to_play == WHITE
+        state = transition_function(state, BOARD_SIZE**2)
+
+    assert np.sum(state.board == 0) == 0
