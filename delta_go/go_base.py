@@ -245,6 +245,7 @@ def score(board: np.ndarray, komi: float, return_both_colors: bool = False) -> U
 
 
 def result(board: np.ndarray, komi: float) -> int:
+    """Return 1 if black wins, -1 if white wins, 0 if draw or the game is not over."""
     score_ = score(board, komi, return_both_colors=False)
     assert isinstance(score_, float)  # Make sure you haven't got the tuple
     if score_ > 0:

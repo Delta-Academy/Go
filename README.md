@@ -36,7 +36,7 @@ The score also includes a [Komi](<https://en.wikipedia.org/wiki/Go_(game)#Komi>)
    - You can only store data to be used in a competition in a `.pkl` file by `save_file()`.
    - You can pkl anything you want, even a dictionary of pytorch networks (or nothing)! Just make sure your choose_move can read it.
    - In the competition, your agent will call the `choose_move()` function in `main.py` to select a move (`choose_move()` may call other functions in `main.py`)
-   - We provide to you an `MCTS` class for you to implement. This class is passed to your choose_move and will persist across calls to choose_move, allowing you to prune the tree. In the competition we will initialise this class for you, so please do not add any arguments to `__init__()`. (You do not have to use this class).
+   - We provide an `MCTS` class for you to implement. This class is passed to your choose_move and will persist across calls to choose_move, allowing you to prune the tree. In the competition we will initialise this class for you, so please do not add any arguments to `__init__()`. (You do not have to use this class).
    - Any code not in `main.py` will not be used. <!-- AGAIN MAYBE REMOVE -->
 
 3. Submission deadline: **2:30pm UTC, Sunday**.
@@ -47,7 +47,7 @@ The score also includes a [Komi](<https://en.wikipedia.org/wiki/Go_(game)#Komi>)
 
 Each matchup will consist of one game of Go between two players with the winning player progressing to the later rounds. The Komi (handicap) controls for the fact that it's an advantage to going first
 
-The competition & discussion will be in [Gather Town](https://app.gather.town/app/nJwquzJjD4TLKcTy/Delta%20Academy) at **2:30pm UTC on Sunday** (60 mins after submission deadline)!
+The competition & discussion will be in [Gather Town](https://app.gather.town/app/nJwquzJjD4TLKcTy/Delta%20Academy) at **3:30pm UTC on Sunday** (60 mins after submission deadline)!
 
 ## Technical Details :hammer:
 
