@@ -28,7 +28,6 @@ from typing import Iterable, Optional, Set, Tuple, Union
 
 import numpy as np
 
-import coords
 from utils import (
     BLACK,
     BOARD_SIZE,
@@ -176,7 +175,7 @@ def play_move(state, move: int, color=None, mutate=False):
 
     if not is_move_legal(coord, state.board, state.ko):
         raise IllegalMove(
-            f'{"Black" if state.to_play == BLACK else "White"} coord at {coords.to_gtp(coord)} is illegal: \n{state}'
+            f'{"Black" if state.to_play == BLACK else "White"} coord at {to_human_readable(coord)} is illegal: \n{state}'
         )
 
     potential_ko = is_koish(state.board, coord)
@@ -254,3 +253,14 @@ def result(board: np.ndarray, komi: float) -> int:
         return -1
     else:
         return 0
+
+
+ALPHA_ROW = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+
+
+def to_human_readable(coord: Tuple[int, int]) -> str:
+    """Converts from a Minigo coordinate to a human readbale coordinate."""
+    if coord is None:
+        return "pass"
+    y, x = coord
+    return f"{ALPHA_ROW[x]}{BOARD_SIZE - y}"
