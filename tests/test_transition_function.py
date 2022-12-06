@@ -62,7 +62,7 @@ def test_transition_function_no_in_place_mutation_10_times() -> None:
         test_transition_function_no_in_place_mutation()
 
 
-def ensure_to_play_changes_terminal():
+def test_ensure_to_play_changes_terminal():
     state = State()
     state = transition_function(state, choose_move_randomly(state))  # Black
     state = transition_function(state, 81)  # White
@@ -70,7 +70,6 @@ def ensure_to_play_changes_terminal():
     # Black wins
     assert is_terminal(state)
     assert reward_function(state) == 1  # Since player_move is BLACK by default
-    print(state.to_play)
 
 
 def test_max_num_moves_is_terminal():

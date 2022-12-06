@@ -29,7 +29,6 @@ class State:
     board: Optional[np.ndarray] = None
     recent_moves: Tuple[PlayerMove, ...] = tuple()
     to_play: int = BLACK
-    player_color: int = BLACK
 
     ko: Optional[Tuple[int, int]] = None
     board_deltas: Optional[List[np.ndarray]] = None
@@ -44,7 +43,6 @@ class State:
             ko=self.ko,
             recent_moves=self.recent_moves,
             to_play=self.to_play,
-            player_color=self.player_color,
             board_deltas=self.board_deltas,
         )
 

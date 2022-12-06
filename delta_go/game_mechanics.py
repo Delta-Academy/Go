@@ -48,14 +48,12 @@ def transition_function(state: State, action: int) -> State:
 
 
 def reward_function(state: State) -> int:
-    """Returns the reward that would be recieved for the color defined as state.player_color.
+    """Returns the reward that would be recieved for black in the current state Drawn from.
 
-    Drawn from {0,1,-1}.
+    {0,1,-1}.
     """
-    if not game_over(state.recent_moves):
-        return 0
-    result_ = result(state.board, KOMI)
-    return result_ if state.player_color == BLACK else result_ * -1
+    assert state.board is not None
+    return result(state.board, KOMI) if game_over(state.recent_moves) else 0
 
 
 def is_terminal(state: State) -> bool:
@@ -121,7 +119,10 @@ class GoEnv:
 
     @property
     def reward(self) -> int:
-        return reward_function(self.state)
+        if self.player_color == BLACK:
+            return reward_function(self.state)
+        else:
+            return reward_function(self.state) * -1
 
     @property
     def done(self) -> bool:
@@ -133,7 +134,7 @@ class GoEnv:
         self.player_color = BLACK if player_black else random.choice([BLACK, WHITE])
         self.color_str = "Black" if self.player_color == BLACK else "White"
 
-        self.state = State(player_color=self.player_color)
+        self.state = State()
 
         if self.verbose:
             print(
