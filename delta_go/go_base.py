@@ -24,7 +24,7 @@
 import copy
 from collections import namedtuple
 from dataclasses import dataclass
-from typing import Iterable, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -43,9 +43,8 @@ from utils import (
     int_to_coord,
 )
 
-
-class PositionWithContext(namedtuple("SgfPosition", ["position", "next_move", "result"])):
-    pass
+if TYPE_CHECKING:
+    from state import State
 
 
 def place_stones(board: np.ndarray, color: int, stones: Iterable[Tuple[int, int]]) -> None:
@@ -53,8 +52,9 @@ def place_stones(board: np.ndarray, color: int, stones: Iterable[Tuple[int, int]
         board[s] = color
 
 
-def pass_move(state, mutate: bool = False):
+def pass_move(state: "State", mutate: bool = False):
     pos = state if mutate else copy.deepcopy(state)
+    assert pos.board_deltas is not None
     pos.recent_moves += (PlayerMove(pos.to_play, PASS_MOVE),)
     pos.board_deltas = [np.zeros([1, BOARD_SIZE, BOARD_SIZE], dtype=np.int8)] + pos.board_deltas[:6]
     pos.to_play *= -1
@@ -62,11 +62,18 @@ def pass_move(state, mutate: bool = False):
     return pos
 
 
-def find_reached(board: np.ndarray, c: Tuple[int, int]) -> Tuple[Set, Set]:
-    color = board[c]
-    chain = {c}
+def find_reached(
+    board: np.ndarray, coord: Tuple[int, int]
+) -> Tuple[Set[Tuple[int, int]], Set[Tuple[int, int]]]:
+    """Finds the stones that are connected to the stone at 'coord'. Retuns two sets of coordinates:
+
+    - chain: the chain of stones of the same color that are connected to coord
+    - reached: the empty spaces / stones of the opposite color that are adjacent to the chain
+    """
+    color = board[coord]
+    chain = {coord}
     reached = set()
-    frontier = [c]
+    frontier = [coord]
     while frontier:
         current = frontier.pop()
         chain.add(current)
@@ -79,7 +86,7 @@ def find_reached(board: np.ndarray, c: Tuple[int, int]) -> Tuple[Set, Set]:
 
 
 def is_koish(board: np.ndarray, coord: Tuple[int, int]) -> Optional[int]:
-    """Check if c is surrounded on all sides by 1 color, and return that color."""
+    """Check if coord is surrounded on all sides by 1 color, and return that color."""
     if board[coord] != EMPTY:
         return None
     neighbors = {board[n] for n in NEIGHBORS[coord]}
@@ -90,7 +97,7 @@ def is_koish(board: np.ndarray, coord: Tuple[int, int]) -> Optional[int]:
 
 
 def is_eyeish(board: np.ndarray, coord: Optional[Tuple[int, int]]):
-    """Check if c is an eye, for the purpose of restricting MC rollouts."""
+    """Check if coord is an eye, for the purpose of restricting MC rollouts."""
     # pass is fine.
     if coord is None:
         return
@@ -211,13 +218,9 @@ def game_over(recent: Tuple[PlayerMove, ...]) -> bool:
     return two_passes or turn_limit_reached
 
 
-def score(board: np.ndarray, komi: float, return_both_colors: bool = False) -> Union[float, Tuple]:
-    """Return score from Black's perspective.
-
-    If White is winning, score is negative.
-    return_both_colors: set to true to return a tuple of (black_score, white_score)
-                        rather than white score = -black_score
-    """
+def fill_empty_board_spaces(board: np.ndarray) -> np.ndarray:
+    """Returns a copy of 'board' with all the unassigned spaces filled in with the color that
+    occupies the territory."""
     working_board = np.copy(board)
     while EMPTY in working_board:
         unassigned_spaces = np.where(working_board == EMPTY)
@@ -233,7 +236,18 @@ def score(board: np.ndarray, komi: float, return_both_colors: bool = False) -> U
         else:
             territory_color = UNKNOWN  # dame, or seki
         place_stones(working_board, territory_color, territory)
+    return working_board
 
+
+def score(board: np.ndarray, komi: float, return_both_colors: bool = False) -> Union[float, Tuple]:
+    """Return score from Black's perspective.
+
+    If White is winning, score is negative.
+    return_both_colors: set to true to return a tuple of (black_score, white_score)
+                        rather than white score = -black_score
+    """
+
+    working_board = fill_empty_board_spaces(board)
     if return_both_colors:
         return (
             np.count_nonzero(working_board == BLACK) - komi,

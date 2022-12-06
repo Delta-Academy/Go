@@ -115,7 +115,7 @@ The opponents' <code style="white-space:nowrap;">choose_move</code> functions ar
     <br />
     <br />
 
-<code style="white-space:nowrap;">GoEnv</code> has a <code style="white-space:nowrap;"> verbose</code> argument which prints the information about the game to the console when set to <code style="white-space:nowrap;">True</code>. <code style="white-space:nowrap;"> GoEnv</code> also has a render argument which visualises the game in pygame when set to <code style="white-space:nowrap;">True</code>. This allows you to visualise your AI's skills. You can play against your agent using the <code style="white-space:nowrap;">human_choose_move()</code> function!
+<code style="white-space:nowrap;">GoEnv</code> has a <code style="white-space:nowrap;"> verbose</code> argument which prints the information about the game to the console when set to <code style="white-space:nowrap;">True</code>. <code style="white-space:nowrap;"> GoEnv</code> also has a render argument which visualises the game in pygame when set to <code style="white-space:nowrap;">True</code>. This allows you to visualise your AI's skills. You can play against your agent using the <code style="white-space:nowrap;">human_player()</code> function!
 
 </details>
 
@@ -146,6 +146,15 @@ Inputs:
 
 <code style="white-space:nowrap;">render</code>: whether to render the match through pygame
 
+</details>
+
+<details>
+<summary><code style="white-space:nowrap;"> human_player()</code></summary>
+Use this in place of a choose_move function to play against your bot yourself!
+Left click the board to place a stone, right click to pass.
+<br />
+<br />
+Takes the state as input and outputs an action.
 </details>
 
 <details>
