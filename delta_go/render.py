@@ -1,11 +1,16 @@
 from pathlib import Path
 
 import numpy as np
-
 import pygame
+
 from go_base import BLACK, BOARD_SIZE, WHITE
 
 HERE = Path(__file__).parent.resolve()
+
+"""
+Just renders the game visually, does not need to be understood to build
+a solution
+"""
 
 
 def get_image(image_name: str) -> pygame.surface.Surface:

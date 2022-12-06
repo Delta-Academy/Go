@@ -1,8 +1,9 @@
+import inspect
 from typing import Any, Dict, Optional
 
 import numpy as np
-
 import torch
+
 from check_submission import check_submission
 from game_mechanics import choose_move_randomly, human_player, load_pkl, play_go, save_pkl
 from go_base import all_legal_moves
@@ -15,9 +16,13 @@ assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 class MCTS:
     def __init__(self):
         """You can use this as an mcts class that persists across choose_move calls."""
-        pass
+        args = inspect.getfullargspec(self.__init__).args
+        # Move me to check submission?
+        assert (
+            len(args) == 1 and args[0] == "self"
+        ), "Please do not pass any extra arguments to your MCMS class on init"
 
-    def prune(self):
+    def prune_tree(self):
         pass
 
     def set_initial_state(self, state):
