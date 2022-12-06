@@ -82,6 +82,7 @@ if __name__ == "__main__":
     )  # <---- Make sure I pass! Or your solution will not work in the tournament!!
 
     # Play a game against against your bot!
+    # Left click to place a stone. Right click to pass!
     play_go(
         your_choose_move=human_player,
         opponent_choose_move=choose_move_no_network,
