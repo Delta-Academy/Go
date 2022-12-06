@@ -15,12 +15,8 @@ assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 
 class MCTS:
     def __init__(self):
-        """You can use this as an mcts class that persists across choose_move calls."""
-        args = inspect.getfullargspec(self.__init__).args
-        # Move me to check submission?
-        assert (
-            len(args) == 1 and args[0] == "self"
-        ), "Please do not pass any extra arguments to your MCMS class on init"
+        """This class will persist across choose_move() calls, meaning pruning is possible."""
+        pass
 
     def prune_tree(self):
         pass
@@ -81,7 +77,7 @@ if __name__ == "__main__":
         TEAM_NAME, choose_move_no_network
     )  # <---- Make sure I pass! Or your solution will not work in the tournament!!
 
-    # Play a game against against your bot!
+    # Play a game against your bot!
     # Left click to place a stone. Right click to pass!
     play_go(
         your_choose_move=human_player,
