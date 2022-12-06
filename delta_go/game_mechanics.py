@@ -41,10 +41,15 @@ KOMI = 7.5
 
 
 def transition_function(state: State, action: int) -> State:
+    """Returns the state that would be reached by taking 'action' in 'state'.""" ""
     return play_move(state, action, state.to_play)
 
 
 def reward_function(state: State) -> int:
+    """Returns the reward that would be recieved for the color defined as state.player_color.
+
+    Drawn from {0,1,-1}.
+    """
     if not game_over(state.recent_moves):
         return 0
     result_ = result(state.board, KOMI)
@@ -52,6 +57,7 @@ def reward_function(state: State) -> int:
 
 
 def is_terminal(state: State) -> bool:
+    """Returns True if the game is over, False otherwise."""
     return game_over(state.recent_moves)
 
 
@@ -71,7 +77,6 @@ def play_go(
     )
 
     state, reward, done, info = env.reset()
-    done = False
     while not done:
         action = your_choose_move(state=state)
         state, reward, done, info = env.step(action)
