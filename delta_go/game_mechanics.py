@@ -39,6 +39,8 @@ SCREEN_SIZE = (500, 500)
 
 KOMI = 7.5
 
+############# Functions useful for MCTS ###############
+
 
 def transition_function(state: State, action: int) -> State:
     """Returns the state that would be reached by taking 'action' in 'state'.""" ""
@@ -91,6 +93,10 @@ class GoEnv:
         render: bool = False,
         game_speed_multiplier: float = 1.0,
     ):
+        """As in other environments, the step() function takes two steps.
+
+        Hence the functions above should be used for MCTS
+        """
 
         self.opponent_choose_move = opponent_choose_move
         self.render = render
@@ -230,9 +236,12 @@ def save_pkl(file: Any, team_name: str) -> None:
 # Will not work with a screen override
 SQUARE_SIZE = SCREEN_SIZE[0] // BOARD_SIZE
 LEFT = 1
+RIGHT = 3
 
 
-def pos_to_coord(pos: Tuple[int, int]) -> Tuple[int, int]:  # Assume square board
+def pos_to_coord(pos: Tuple[int, int]) -> Tuple[int, int]:
+    """Used in human_player only."""
+
     col = pos[0] // SQUARE_SIZE
     row = pos[1] // SQUARE_SIZE
     return row, col
@@ -242,9 +251,9 @@ def coord_to_int(coord: Tuple[int, int]) -> int:
     return coord[0] * BOARD_SIZE + coord[1]
 
 
-def human_player(state) -> int:
+def human_player(state: State) -> int:
 
-    print("Your move, click to place a tile!")
+    print("\nYour move, click to place a tile!")
     legal_moves = all_legal_moves(state.board, state.ko)
     if len(legal_moves) == 1:
         print("You have no legal moves, so you pass")
@@ -258,3 +267,5 @@ def human_player(state) -> int:
                 action = coord_to_int(coord)
                 if action in legal_moves:
                     return action
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == RIGHT:
+                return PASS_MOVE
