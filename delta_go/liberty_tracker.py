@@ -44,6 +44,13 @@ class LibertyTracker:
         liberty_cache: Optional[np.ndarray] = None,
         max_group_id: int = 1,
     ):
+        """This class is used only for caching to speed up computions, it does not need to be
+        understood to build a solution.
+
+        It keeps track of the existing liberties (en.wikipedia.org/wiki/Rules_of_Go#Liberties) on
+        the board so they do not have to be recomputed before each move
+        """
+
         # group_index: a NxN numpy array of group_ids. -1 means no group
         # groups: a dict of group_id to groups
         # liberty_cache: a NxN numpy array of liberty counts

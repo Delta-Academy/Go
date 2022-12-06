@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Tuple
 
 import numpy as np
-
 import pygame
+from torch import nn
+
 from go_base import (
     BLACK,
     BOARD_SIZE,
@@ -21,7 +22,6 @@ from go_base import (
 )
 from render import render_game
 from state import State
-from torch import nn
 
 HERE = Path(__file__).parent.resolve()
 
@@ -92,8 +92,6 @@ class GoEnv:
         self.verbose = verbose
         self.game_speed_multiplier = game_speed_multiplier
 
-        # Which color do we play as
-
         self.state = State()
 
         if render:
@@ -139,6 +137,8 @@ class GoEnv:
         return self.state, self.reward, self.done, {}
 
     def move_to_string(self, move: int) -> str:
+
+        assert self.state.board is not None
         N = self.state.board.shape[0]
         if move == N**2:
             return "passes"
