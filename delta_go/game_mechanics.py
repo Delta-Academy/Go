@@ -4,9 +4,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Tuple
 
 import numpy as np
-import pygame
-from torch import nn
 
+import pygame
 from go_base import (
     BLACK,
     BOARD_SIZE,
@@ -22,6 +21,7 @@ from go_base import (
 )
 from render import render_game
 from state import State
+from torch import nn
 
 HERE = Path(__file__).parent.resolve()
 
@@ -48,9 +48,9 @@ def transition_function(state: State, action: int) -> State:
 
 
 def reward_function(state: State) -> int:
-    """Returns the reward that would be recieved for black in the current state Drawn from.
+    """Returns the reward that received for black in the current state.
 
-    {0,1,-1}.
+    {0, 1,-1}.
     """
     assert state.board is not None
     return result(state.board, KOMI) if game_over(state.recent_moves) else 0
