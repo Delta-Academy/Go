@@ -4,8 +4,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from liberty_tracker import LibertyTracker
-from utils import BLACK, EMPTY_BOARD, PlayerMove
+from .liberty_tracker import LibertyTracker
+from .utils import BLACK, EMPTY_BOARD, PlayerMove
 
 
 @dataclass

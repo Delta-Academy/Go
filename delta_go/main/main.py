@@ -1,13 +1,15 @@
-import inspect
-from typing import Any, Dict, Optional
-
-import numpy as np
-import torch
+from typing import Any, Optional
 
 from check_submission import check_submission
-from game_mechanics import choose_move_randomly, human_player, load_pkl, play_go, save_pkl
-from go_base import all_legal_moves
-from state import State
+from game_mechanics import (
+    State,
+    all_legal_moves,
+    choose_move_randomly,
+    human_player,
+    load_pkl,
+    play_go,
+    save_pkl,
+)
 
 TEAM_NAME = "Team Name"  # <---- Enter your team name here!
 assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"

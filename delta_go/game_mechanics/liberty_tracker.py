@@ -3,8 +3,8 @@ from typing import Dict, Optional, Set
 
 import numpy as np
 
-from go_base import Group, find_reached, place_stones
-from utils import BLACK, BOARD_SIZE, EMPTY, FILL, MISSING_GROUP_ID, NEIGHBORS, WHITE
+from .go_base import Group, find_reached, place_stones
+from .utils import BLACK, BOARD_SIZE, EMPTY, FILL, MISSING_GROUP_ID, NEIGHBORS, WHITE
 
 
 class LibertyTracker:

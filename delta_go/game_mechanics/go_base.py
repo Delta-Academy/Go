@@ -22,13 +22,12 @@
 (0, 0) is considered to be the upper left corner of the board, and (18, 0) is the lower left.
 """
 import copy
-from collections import namedtuple
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Optional, Set, Tuple, Union
 
 import numpy as np
 
-from utils import (
+from .utils import (
     BLACK,
     BOARD_SIZE,
     DIAGONALS,
@@ -44,7 +43,7 @@ from utils import (
 )
 
 if TYPE_CHECKING:
-    from state import State
+    from .state import State
 
 
 def place_stones(board: np.ndarray, color: int, stones: Iterable[Tuple[int, int]]) -> None:

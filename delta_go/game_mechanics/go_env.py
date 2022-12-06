@@ -6,7 +6,9 @@ from typing import Any, Callable, Dict, Tuple
 import numpy as np
 
 import pygame
-from go_base import (
+from torch import nn
+
+from .go_base import (
     BLACK,
     BOARD_SIZE,
     PASS_MOVE,
@@ -19,9 +21,8 @@ from go_base import (
     result,
     score,
 )
-from render import render_game
-from state import State
-from torch import nn
+from .render import render_game
+from .state import State
 
 HERE = Path(__file__).parent.resolve()
 
