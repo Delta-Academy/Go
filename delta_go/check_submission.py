@@ -36,14 +36,12 @@ def check_submission(team_name: str, choose_move_no_network: Callable) -> None:
 def import_mcts():
     try:
         MCTS = getattr(__import__("main", fromlist=["None"]), "MCTS")
-        args = list(inspect.signature(MCTS.__init__).parameters.keys())
-        assert (
-            len(args) == 1 and args[0] == "self"
-        ), f"__init__ should only take self as an argument, but it takes {args}"
 
         return MCTS()
     except AttributeError as e:
         raise ImportError("No MCTS found in file main.py") from e
     except TypeError as e:
-        print("Could not init MCTS class, __init__ should only take self as an argument")
+        print(
+            "Failed to initialize MCTS class, __init__ should only take self as a non-default argument."
+        )
         raise
