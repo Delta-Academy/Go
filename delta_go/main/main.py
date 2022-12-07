@@ -59,9 +59,7 @@ def choose_move(
     raise NotImplementedError("You need to implement this function!")
 
 
-def workflow() -> None:
-    """This function gets called when you click the "Run" button."""
-
+if __name__ == "__main__":
     # Example workflow, feel free to edit this! ###
     file = train()
     save_pkl(file, TEAM_NAME)
