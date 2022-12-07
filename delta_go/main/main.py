@@ -56,7 +56,8 @@ def choose_move(
     raise NotImplementedError("You need to implement this function!")
 
 
-if __name__ == "__main__":
+def workflow() -> None:
+    """This function gets called when you click the "Run" button."""
 
     # Example workflow, feel free to edit this! ###
     file = train()

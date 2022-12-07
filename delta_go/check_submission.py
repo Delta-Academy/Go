@@ -1,15 +1,15 @@
+import inspect
 import time
 from pathlib import Path
 from typing import Callable
 
 from delta_utils import get_discrete_choose_move_out_checker
 from delta_utils.check_submission import check_submission as _check_submission
-from delta_utils.utils import find
 from game_mechanics import BOARD_SIZE, GoEnv, choose_move_randomly, load_pkl
 
 
 def check_submission(team_name: str, choose_move_no_network: Callable) -> None:
-    example_state, _, _, info = GoEnv(choose_move_randomly).reset()
+    example_state, _, _, _ = GoEnv(choose_move_randomly).reset()
     pkl_file = load_pkl(team_name)
 
     max_time = 1
@@ -18,7 +18,9 @@ def check_submission(team_name: str, choose_move_no_network: Callable) -> None:
         example_state,
     )
     t2 = time.time()
-    assert t2 - t1 < max_time
+    assert (
+        t2 - t1 < max_time
+    ), f"Your choose_move_no_network function took {t2 - t1} seconds to run, which is longer than the maximum allowed time of {max_time} seconds."
 
     mcts = import_mcts()
 
@@ -34,11 +36,14 @@ def check_submission(team_name: str, choose_move_no_network: Callable) -> None:
 def import_mcts():
     try:
         MCTS = getattr(__import__("main", fromlist=["None"]), "MCTS")
-        # TODO: Check the MCTS init signature
-        # args = inspect.signature(mcts.__init__).parameters
-        # assert (
-        #         len(args) == 1 and args[0] == "self"
-        # ), "Please do not pass any extra arguments to your MCTS class on init"
+        args = list(inspect.signature(MCTS.__init__).parameters.keys())
+        assert (
+            len(args) == 1 and args[0] == "self"
+        ), f"__init__ should only take self as an argument, but it takes {args}"
+
         return MCTS()
     except AttributeError as e:
         raise ImportError("No MCTS found in file main.py") from e
+    except TypeError as e:
+        print("Could not init MCTS class, __init__ should only take self as an argument")
+        raise

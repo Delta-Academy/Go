@@ -1,7 +1,6 @@
 # IDE helpers
 .idea
 .vscode
-run.py
 
 # Custom
 team_*
