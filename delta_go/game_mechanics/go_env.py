@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Tuple
 
 import numpy as np
-
 import pygame
-from go_base import (
+from torch import nn
+
+from .go_base import (
     BLACK,
     BOARD_SIZE,
     PASS_MOVE,
@@ -19,11 +20,11 @@ from go_base import (
     result,
     score,
 )
-from render import render_game
-from state import State
-from torch import nn
+from .render import render_game
+from .state import State
 
 HERE = Path(__file__).parent.resolve()
+MAIN_PATH = HERE.parent / "main"
 
 
 ALL_POSSIBLE_MOVES = np.arange(BOARD_SIZE**2 + 1)
@@ -194,7 +195,7 @@ class GoEnv:
             f"Player was playing as {self.color_str}\n"
             f"Black has {np.sum(self.state.board==1)} counters.\n"
             f"White has {np.sum(self.state.board==-1)} counters.\n"
-            f"Your score is {score(self.state.board, KOMI)}.\n"
+            f"Your score is {self.player_color * score(self.state.board, KOMI)}.\n"
         )
 
 
@@ -208,7 +209,7 @@ def choose_move_pass(state: State) -> int:
     return PASS_MOVE
 
 
-def load_pkl(team_name: str, network_folder: Path = HERE) -> nn.Module:
+def load_pkl(team_name: str, network_folder: Path = MAIN_PATH) -> nn.Module:
     net_path = network_folder / f"{team_name}_file.pkl"
     assert (
         net_path.exists()
@@ -220,7 +221,7 @@ def load_pkl(team_name: str, network_folder: Path = HERE) -> nn.Module:
 
 def save_pkl(file: Any, team_name: str) -> None:
     assert "/" not in team_name, "Invalid TEAM_NAME. '/' are illegal in TEAM_NAME"
-    net_path = HERE / f"{team_name}_file.pkl"
+    net_path = MAIN_PATH / f"{team_name}_file.pkl"
     n_retries = 5
     for attempt in range(n_retries):
         try:

@@ -1,8 +1,7 @@
 run = ["python3", "main.py"]
 language = "python3"
-entrypoint = "main.py"
-# hidden = ["venv", ".config", "**/__pycache__", "**/.mypy_cache", "**/*.pyc"]
-hidden = ["venv", "setup.py", ".config", "requirements_dev.txt", "**/__pycache__", "**/.mypy_cache", "**/*.pyc", "tests",".gitignore", ".pre-commit-config.yaml", "setup.cfg", "code/__init__.py", "__init__.py", "team_winner.py"]
+entrypoint = "main/main.py"
+hidden = ["venv", "setup.py", ".config", "requirements_dev.txt", "**/__pycache__", "**/.mypy_cache", "**/*.pyc", "tests",".gitignore", ".pre-commit-config.yaml", "setup.cfg", "code/__init__.py", "__init__.py", "team_winner.py", "init_replit.sh", "images", "hash_game_mechanics.py", "poetry.lock", "pyproject.toml", "game_mechanics_hash.txt", "Makefile"]
 
 audio = true
 
@@ -28,7 +27,7 @@ command = [
 [env]
 VIRTUAL_ENV = "/home/runner/${REPL_SLUG}/venv"
 PATH = "${VIRTUAL_ENV}/bin"
-PYTHONPATH="${VIRTUAL_ENV}/lib/python3.8/site-packages"
+PYTHONPATH="/home/runner/${REPL_SLUG}:${VIRTUAL_ENV}/lib/python3.8/site-packages"
 REPLIT_POETRY_PYPI_REPOSITORY="https://package-proxy.replit.com/pypi/"
 
 [debugger]

@@ -1,13 +1,18 @@
-import inspect
-from typing import Any, Dict, Optional
-
-import numpy as np
-import torch
+from typing import Any, Optional
 
 from check_submission import check_submission
-from game_mechanics import choose_move_randomly, human_player, load_pkl, play_go, save_pkl
-from go_base import all_legal_moves
-from state import State
+from game_mechanics import (
+    State,
+    all_legal_moves,
+    choose_move_randomly,
+    human_player,
+    is_terminal,
+    load_pkl,
+    play_go,
+    reward_function,
+    save_pkl,
+    transition_function,
+)
 
 TEAM_NAME = "Team Name"  # <---- Enter your team name here!
 assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
@@ -15,12 +20,8 @@ assert TEAM_NAME != "Team Name", "Please change your TEAM_NAME!"
 
 class MCTS:
     def __init__(self):
-        """You can use this as an mcts class that persists across choose_move calls."""
-        args = inspect.getfullargspec(self.__init__).args
-        # Move me to check submission?
-        assert (
-            len(args) == 1 and args[0] == "self"
-        ), "Please do not pass any extra arguments to your MCMS class on init"
+        """This class will persist across choose_move() calls, meaning pruning is possible."""
+        pass
 
     def prune_tree(self):
         pass
@@ -59,7 +60,6 @@ def choose_move(
 
 
 if __name__ == "__main__":
-
     # Example workflow, feel free to edit this! ###
     file = train()
     save_pkl(file, TEAM_NAME)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         TEAM_NAME, choose_move_no_network
     )  # <---- Make sure I pass! Or your solution will not work in the tournament!!
 
-    # Play a game against against your bot!
+    # Play a game against your bot!
     # Left click to place a stone. Right click to pass!
     play_go(
         your_choose_move=human_player,

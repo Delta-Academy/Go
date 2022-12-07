@@ -30,18 +30,20 @@ The score also includes a [Komi](<https://en.wikipedia.org/wiki/Go_(game)#Komi>)
 
 1. You must build an agent to play Go using either a **reinforcement learning** algorithm or a **planning algorithm** (such as monte carlo tree search :deciduous_tree:) or a mix of **both**!
 
-2. You can only write code in `main.py` <!-- Remove me if we change to a main folder -->
+2. You can only write code in the `main` folder. As previously, the entry point to your code will be `main.py`, but you can add, and import from, other custom python files in the `main` folder.
 
-   - Your choose_move function will have a limit of 1 second to run!
    - You can only store data to be used in a competition in a `.pkl` file by `save_file()`.
    - You can pkl anything you want, even a dictionary of pytorch networks (or nothing)! Just make sure your choose_move can read it.
-   - In the competition, your agent will call the `choose_move()` function in `main.py` to select a move (`choose_move()` may call other functions in `main.py`)
+   - In the competition, your agent will call the `choose_move()` function in `main.py` to select a move (`choose_move()` may call other functions in the `main` folder)
    - We provide an `MCTS` class for you to implement. This class is passed to your choose_move and will persist across calls to choose_move, allowing you to prune the tree. In the competition we will initialise this class for you, so please do not add any arguments to `__init__()`. (You do not have to use this class).
-   - Any code not in `main.py` will not be used. <!-- AGAIN MAYBE REMOVE -->
+   - Any code not in the `main` folder will not be used.
 
-3. Submission deadline: **2:30pm UTC, Sunday**.
-   - You can update your code after submitting, but **not after the deadline**.
-   - **Check your submission is valid with `check_submission()`**
+3. Your choose_move function will have a limit of 1 second to run!
+
+4. Submission deadline: **2:30pm UTC, Sunday**.
+
+- You can update your code after submitting, but **not after the deadline**.
+- **Check your submission is valid with `check_submission()`**
 
 ## Competition Format :crossed_swords:
 

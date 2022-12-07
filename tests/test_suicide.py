@@ -1,8 +1,6 @@
 import numpy as np
 
-from delta_go.game_mechanics import transition_function
-from delta_go.state import State
-from delta_go.utils import BLACK, BOARD_SIZE, EMPTY, WHITE
+from delta_go.game_mechanics import BLACK, BOARD_SIZE, EMPTY, WHITE, State, transition_function
 
 
 def test_top_suicide():
