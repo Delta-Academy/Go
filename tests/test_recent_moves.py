@@ -1,7 +1,13 @@
 import numpy as np
 
-from delta_go.game_mechanics import BOARD_SIZE, GoEnv, choose_move_pass, transition_function
-from delta_go.utils import BLACK, WHITE
+from delta_go.game_mechanics import (
+    BLACK,
+    BOARD_SIZE,
+    WHITE,
+    GoEnv,
+    choose_move_pass,
+    transition_function,
+)
 
 
 def test_recent_moves():

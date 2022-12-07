@@ -1,7 +1,11 @@
-from delta_go.game_mechanics import reward_function, transition_function
-from delta_go.go_base import BOARD_SIZE
-from delta_go.state import State
-from delta_go.utils import BLACK, WHITE
+from delta_go.game_mechanics import (
+    BLACK,
+    BOARD_SIZE,
+    WHITE,
+    State,
+    reward_function,
+    transition_function,
+)
 
 
 def test_reward_function_black_loses() -> None:

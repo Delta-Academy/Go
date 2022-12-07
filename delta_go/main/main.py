@@ -6,9 +6,12 @@ from game_mechanics import (
     all_legal_moves,
     choose_move_randomly,
     human_player,
+    is_terminal,
     load_pkl,
     play_go,
+    reward_function,
     save_pkl,
+    transition_function,
 )
 
 TEAM_NAME = "Team Name"  # <---- Enter your team name here!

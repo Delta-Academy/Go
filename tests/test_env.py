@@ -6,14 +6,15 @@ from delta_go.game_mechanics import (
     BLACK,
     BOARD_SIZE,
     KOMI,
+    MAX_NUM_MOVES,
     GoEnv,
+    State,
+    all_legal_moves,
     choose_move_pass,
     choose_move_randomly,
     play_go,
+    score,
 )
-from delta_go.go_base import all_legal_moves, score
-from delta_go.state import State
-from delta_go.utils import MAX_NUM_MOVES
 
 PASS_MOVE = BOARD_SIZE**2
 

@@ -3,17 +3,17 @@ import random
 import numpy as np
 
 from delta_go.game_mechanics import (
-    PASS_MOVE,
+    BOARD_SIZE,
+    MAX_NUM_MOVES,
     GoEnv,
+    State,
+    all_legal_moves,
     choose_move_pass,
     choose_move_randomly,
     is_terminal,
     reward_function,
     transition_function,
 )
-from delta_go.go_base import all_legal_moves, game_over
-from delta_go.state import State
-from delta_go.utils import BOARD_SIZE, MAX_NUM_MOVES
 
 
 def test_transition_function_takes_move():
